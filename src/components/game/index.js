@@ -315,21 +315,17 @@ const World = ({
   }, []);
 
   useEffect(() => {
-    let animation;
-
     const animate = () => {
-      animation = requestAnimationFrame(animate);
-
       rotatePlayer();
       movePlayer();
 
       renderer.current.render(scene.current, camera.current);
     };
 
-    animate();
+    renderer.current.setAnimationLoop(animate);
 
     return () => {
-      cancelAnimationFrame(animation);
+      renderer.current.setAnimationLoop(null);
     };
   }, [movePlayer]);
 
