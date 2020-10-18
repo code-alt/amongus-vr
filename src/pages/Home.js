@@ -12,7 +12,7 @@ const Home = () => (
       <title>Among Us - VR</title>
       <meta
         name="description"
-        content="A VR experiment."
+        content="A VR-ready recreation of the indie game: Among Us."
       />
       <link rel="prefetch" href={skeld} as="fetch" crossorigin="" />
       <link rel="prefetch" href={astronaut} as="fetch" crossorigin="" />

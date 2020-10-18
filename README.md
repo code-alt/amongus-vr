@@ -1,3 +1,3 @@
-# Among Us VR
+# Among Us - VR
 
-A VR experiment.
+A VR-ready recreation of the indie game: Among Us.
