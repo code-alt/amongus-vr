@@ -120,9 +120,7 @@ const World = ({
 
               if (i === 3) {
                 // up and down axis on thumbsticks
-                if (data.handedness === 'left') {
-                  player.current.position.y -= movementSpeed * data.axes[3];
-                } else {
+                if (data.handedness === 'right') {
                   player.current.position.x -= cameraVector.current.x * movementSpeed * data.axes[3];
                   player.current.position.z -= cameraVector.current.z * movementSpeed * data.axes[3];
                 }
