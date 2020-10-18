@@ -3,15 +3,61 @@
   "version": "0.0.1",
   "homepage": "https://amongus.codyb.co",
   "description": "",
-  "repository": "https://github.com/CodyJasonBennett/amongus-vr.git",
+  "repository": "https://github.com/CodyJasonBennett/amongus--vr.git",
   "author": "Cody Bennett <hi@codyb.co>",
   "license": "MIT",
   "private": true,
-  "devDependencies": {},
-  "dependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.5",
+    "prettier": "^2.1.2",
+    "react-scripts": "3.4.3",
+    "react-snap": "1.23.0",
+    "react-test-renderer": "^16.13.1",
+    "source-map-explorer": "^2.5.0",
+    "stylelint": "^13.7.2",
+    "stylelint-config-recommended": "^3.0.0"
+  },
+  "dependencies": {
+    "@mdx-js/react": "^1.6.18",
+    "classnames": "^2.2.6",
+    "ios-inner-height": "^1.1.1",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-helmet-async": "^1.0.7",
+    "react-router-dom": "5.2.0",
+    "react-transition-group": "^4.4.1",
+    "stats.js": "^0.17.0",
+    "three": "^0.121.1"
+  },
   "scripts": {
+    "start": "set PORT=80 && react-scripts start",
+    "build": "react-scripts build",
+    "postbuild": "react-snap",
     "deploy": "firebase deploy --only hosting",
-    "serve": "firebase serve --only hosting"
+    "serve": "firebase serve --only hosting",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "analyze": "source-map-explorer 'build/static/js/*.js'"
+  },
+  "reactSnap": {
+    "skipThirdPartyRequests": true,
+    "headless": true,
+    "crawl": true
+  },
+  "browserslist": {
+    "production": [
+      ">10%",
+      "not dead",
+      "not ie 11",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "proxy": "https://amongus.codyb.co"
 }
