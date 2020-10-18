@@ -1,0 +1,17 @@
+{
+  "name": "amongus-vr",
+  "version": "0.0.1",
+  "homepage": "https://amongus.codyb.co",
+  "description": "",
+  "repository": "https://github.com/CodyJasonBennett/amongus-vr.git",
+  "author": "Cody Bennett <hi@codyb.co>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {},
+  "dependencies": {},
+  "scripts": {
+    "deploy": "firebase deploy --only hosting",
+    "serve": "firebase serve --only hosting"
+  },
+  "proxy": "https://amongus.codyb.co"
+}
