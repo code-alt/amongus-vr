@@ -63,6 +63,8 @@ const World = (props) => {
   const cameraVector = useRef(new Vector3());
   const prevGamePads = useRef(new Map());
   const wallNodes = useRef([]);
+  const raycasterVector1 = useRef(new Vector3(0, 0, -1));
+  const raycasterVector2 = useRef(new Vector3(0, 1, 0));
   const raycaster = useRef(new Raycaster());
 
   const rotatePlayer = () => {
@@ -132,7 +134,7 @@ const World = (props) => {
               const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
 
               const origin = player.current.position;
-              const direction = new Vector3(0, 0, -1).applyAxisAngle(new Vector3(0, 1, 0), cameraRef.rotation.y);
+              const direction = raycasterVector1.current.applyAxisAngle(raycasterVector2.current, cameraRef.rotation.y);
               raycaster.current.set(origin, direction);
 
               const collisions = raycaster.current.intersectObjects(wallNodes.current);
