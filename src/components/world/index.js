@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import {
   Clock,
   Vector3,
+  Raycaster,
   WebGLRenderer,
   sRGBEncoding,
   PerspectiveCamera,
@@ -61,6 +62,8 @@ const World = (props) => {
   const player = useRef();
   const cameraVector = useRef(new Vector3());
   const prevGamePads = useRef(new Map());
+  const wallNodes = useRef([]);
+  const raycaster = useRef(new Raycaster());
 
   const rotatePlayer = () => {
     if (astronaut.current) {
@@ -125,6 +128,27 @@ const World = (props) => {
 
                 controls.current.update();
               }
+
+              const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
+
+              const origin = player.current.position;
+              const direction = new Vector3(0, 0, -1).applyAxisAngle(new Vector3(0, 1, 0), cameraRef.rotation.y);
+              raycaster.current.set(origin, direction);
+
+              const collisions = raycaster.current.intersectObjects(wallNodes.current);
+              if (collisions.length > 0 && collisions[0].distance <= 1) {
+                if (data.handedness === 'left') {
+                  player.current.position.x += cameraVector.current.z * movementSpeed * data.axes[2];
+                  player.current.position.z -= cameraVector.current.x * movementSpeed * data.axes[2];
+                }
+
+                if (data.handedness === 'right') {
+                  player.current.position.x += cameraVector.current.x * movementSpeed * data.axes[3];
+                  player.current.position.z += cameraVector.current.z * movementSpeed * data.axes[3];
+                }
+
+                controls.current.update();
+              };
             });
           }
 
@@ -146,7 +170,7 @@ const World = (props) => {
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
     renderer.current.xr.setFramebufferScaleFactor(2.0);
-    document.body.appendChild(VRButton.createButton(renderer.current));
+    if ('xr' in navigator) document.body.appendChild(VRButton.createButton(renderer.current));
 
     camera.current = new PerspectiveCamera(50, width.current / height.current, 0.1, 500);
     camera.current.position.set(0, 1.6, 3);
@@ -207,15 +231,12 @@ const World = (props) => {
       skeld.current.traverse(node => {
         if (node.isMesh) {
           node.frustumCulled = false;
+          node.material.transparent = true;
 
-          if (node.name === 'mesh_0_79_79') {
-            node.material.transparent = true;
-          };
+          wallNodes.current.push(node);
         }
       });
 
-      skeld.current.position.set(-67.5, -8.9, 13);
-      skeld.current.scale.set(24, 24, 24);
       scene.current.add(skeld.current);
     });
 
