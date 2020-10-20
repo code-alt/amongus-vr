@@ -4,7 +4,7 @@ export const initialState = {
 };
 
 export function reducer(state, action) {
-  const { type, value } = action;
+  const { type } = action;
 
   switch (type) {
     case 'setUsername': {
