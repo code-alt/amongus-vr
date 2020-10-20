@@ -7,6 +7,15 @@
   outline: none;
 }
 
+.menu__version {
+  font-family: sans-serif;
+  font-size: calc((24 / 16) * 1rem);
+  left: 16px;
+  position: absolute;
+  top: 16px;
+  user-select: none;
+}
+
 .menu__content {
   align-items: center;
   display: flex;
@@ -100,6 +109,130 @@
 @media (max-width: 696px) {
   .menu__item-button {
     margin: 12px 0 0;
-    width: 100%!important;
   }
+}
+
+.menu__item-input {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+.menu__item-input svg:hover {
+  color: #01ff00;
+  cursor: pointer;
+}
+
+.menu__map {
+  border: 8px solid white;
+  width: 800px;
+}
+
+.menu__options {
+  display: flex;
+  flex-direction: column;
+  margin: 36px 0;
+  row-gap: 24px;
+  width: 880px;
+}
+
+.menu__option {
+  align-items: center;
+  display: grid;
+  grid-gap: 32px;
+  grid-template-columns: auto 1fr;
+  grid-template-columns: auto repeat(10, 1fr);
+}
+
+.menu__label {
+  --labelFontSize: calc((36 / 16) * 1rem);
+
+  font-family: sans-serif;
+  font-size: var(--labelFontSize);
+  margin-right: 10px;
+}
+
+.menu__map-selector {
+  display: grid;
+  gap: 70px;
+  grid-template-columns: auto repeat(3, 1fr);
+}
+
+.menu__map-label {
+  opacity: 0.4;
+}
+
+.menu__map-label--active {
+  opacity: 1;
+}
+
+.menu__option-button {
+  --buttonFontSize: calc((36 / 16) * 1rem);
+
+  color: inherit;
+}
+
+.menu__option-button--disabled,
+.menu__option-button--disabled:hover {
+  border: 6px solid transparent;
+}
+
+.menu__option-button--invalid,
+.menu__option-button--invalid:hover {
+  border: 6px solid transparent;
+  cursor: unset;
+  opacity: 0.4;
+}
+
+.menu__lobby {
+  border-radius: 12px;
+  border: 6px solid white;
+  margin: 0 auto;
+  padding: 6px;
+  position: relative;
+  width: 764px;
+}
+
+.menu__lobby-list {
+  align-items: center;
+  border-radius: 6px;
+  border: 3px solid white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 24px;
+}
+
+.menu__lobby-item {
+  align-items: center;
+  border-radius: 12px;
+  border: 6px solid white;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 4px 16px;
+  width: 100%;
+}
+
+.menu__lobby-item:hover {
+  border: 6px solid #01ff00;
+}
+
+.menu__lobby-item:first-of-type {
+  margin-top: 0;
+}
+
+.menu__lobby-item-property {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.menu__lobby-item-text {
+  font-family: sans-serif;
+  font-size: calc((36 / 16) * 1rem);
 }

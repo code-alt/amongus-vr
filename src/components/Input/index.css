@@ -27,7 +27,8 @@
 }
 
 
-.input:hover {
+.input:hover,
+.input:focus {
   border: 6px solid #01ff00;
 }
 

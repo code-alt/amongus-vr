@@ -25,7 +25,8 @@
   font-weight: 400;
 }
 
-.button:hover {
+.button:hover,
+.button:focus {
   border: 6px solid #01ff00;
 }
 

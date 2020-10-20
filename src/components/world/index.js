@@ -22,6 +22,7 @@ import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import innerHeight from 'ios-inner-height';
+import { useAppContext } from 'hooks';
 import { renderPixelRatio, cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import skeldModelPath from 'assets/models/skeld.glb';
 import astronautModelPath from 'assets/models/astronaut.glb';
@@ -38,11 +39,8 @@ function isIterable(obj) {
 const PLAYER_SPEED = 1;
 const PLAYER_VISION = 1;
 
-const World = ({
-  username = 'Red',
-  color = 'red',
-  ...rest
-}) => {
+const World = (props) => {
+  const { username, color } = useAppContext();
   const width = useRef(window.innerWidth);
   const height = useRef(window.innerHeight);
   const clock = useRef(new Clock());
@@ -332,7 +330,7 @@ const World = ({
       aria-hidden
       className="world"
       ref={canvasRef}
-      {...rest}
+      {...props}
     />
   );
 };

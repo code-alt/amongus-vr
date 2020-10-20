@@ -1,10 +1,11 @@
-import React, { lazy, Suspense, useEffect, Fragment } from 'react';
+import React, { lazy, Suspense, useEffect, createContext, useReducer, Fragment } from 'react';
 import { BrowserRouter, Switch, Route, useLocation } from 'react-router-dom';
 import { Transition, config as transitionConfig } from 'react-transition-group';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import VCROSDMono from 'assets/fonts/vcr-osd-mono.woff2';
 import AmongUs from 'assets/fonts/among-us.woff2';
-import { usePrefersReducedMotion } from 'hooks';
+import { useLocalStorage, usePrefersReducedMotion } from 'hooks';
+import { initialState, reducer } from 'app/reducer';
 import { reflow } from 'utils/transition';
 import prerender from 'utils/prerender';
 import './reset.css';
@@ -14,6 +15,8 @@ const Menu = lazy(() => import('pages/Menu'));
 const Lobby = lazy(() => import('pages/Lobby'));
 const Game = lazy(() => import('pages/Game'));
 const NotFound = lazy(() => import('pages/404'));
+
+export const AppContext = createContext();
 
 const repoPrompt = `Designed and developed by Cody Bennett\n\nCheck out the source code: https://github.com/CodyJasonBennett/amongus-vr`;
 
@@ -32,6 +35,9 @@ export const fontStyles = `
 `;
 
 const App = () => {
+  const [storedUsername] = useLocalStorage('username', null);
+  const [storedColor] = useLocalStorage('color', null);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
@@ -50,11 +56,21 @@ const App = () => {
     window.history.scrollRestoration = 'manual';
   }, []);
 
+  useEffect(() => {
+    dispatch({ type: 'setUsername', value: storedUsername });
+  }, [storedUsername]);
+
+  useEffect(() => {
+    dispatch({ type: 'setColor', value: storedColor });
+  }, [storedColor]);
+
   return (
     <HelmetProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <AppContext.Provider value={{ ...state, dispatch }}>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AppContext.Provider>
     </HelmetProvider>
   );
 };

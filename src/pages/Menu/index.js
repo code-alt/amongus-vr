@@ -1,19 +1,98 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, Fragment } from 'react';
+import classNames from 'classnames';
+import { useHistory, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Stars from 'components/Stars';
 import { ReactComponent as Logo } from 'assets/logo.svg';
+import { ReactComponent as ChevronRight } from 'assets/chevronRight.svg';
 import Button from 'components/Button';
 import Input from 'components/Input';
-import { useFormInput } from 'hooks';
+import { useAppContext, useFormInput, useAudio } from 'hooks';
+import select from 'assets/sounds/select.mp3';
+import click from 'assets/sounds/click.mp3';
 import hostIcon from 'assets/host.png';
 import publicIcon from 'assets/public.png';
 import privateIcon from 'assets/private.png';
+import skeld1 from 'assets/skeld1.png';
+import skeld2 from 'assets/skeld2.png';
+import skeld3 from 'assets/skeld3.png';
+import skeldLabel from 'assets/skeld-label.png';
+import miraLabel from 'assets/mira-label.png';
+import polusLabel from 'assets/polus-label.png';
+import skeldIcon from 'assets/skeld-icon.png';
+import miraIcon from 'assets/mira-icon.png';
+import polusIcon from 'assets/polus-icon.png';
+import impostorIcon from 'assets/impostor-icon.png';
+import playersIcon from 'assets/players-icon.png';
 import './index.css';
 
+const lobbies = [
+  {
+    id: 'REDSUS',
+    map: 0,
+    impostors: 1,
+    players: 9,
+    maxPlayers: 10,
+  }
+];
+
+function filterLobbies(mapFilter, impostorsFilter) {
+  return lobbies.filter(({ map, impostors }) =>
+    mapFilter === map &&
+    impostorsFilter === 'Any' ? true : impostorsFilter === impostors
+  )
+}
+
 const Menu = () => {
+  const { username, dispatch } = useAppContext();
+  const history = useHistory();
+  const [version, setVersion] = useState();
   const [menuState, setMenuState] = useState('home');
-  const username = useFormInput('');
-  const code = useFormInput('');
+  const [, toggleSelect] = useAudio(select);
+  const [, toggleClick] = useAudio(click);
+  const usernameInput = useFormInput(username);
+  const codeInput = useFormInput('');
+  const [map, setMap] = useState(0);
+  const [impostors, setImpostors] = useState(1);
+  const [maxPlayers, setMaxPlayers] = useState(9);
+  const [mapFilter, setMapFilter] = useState(0);
+  const [impostorsFilter, setImpostorsFilter] = useState(1);
+  const recommendedPlayers = [null, 4, 7, 9];
+
+  const onSubmit = useCallback(event => {
+    event.preventDefault();
+    if (lobbies.filter(({ id }) => id === codeInput.value).length === 0) return;
+
+    return history.push(`/lobby/${codeInput.value}`);
+  }, [codeInput.value, history]);
+
+  useEffect(() => {
+    async function fetchVersion() {
+      try {
+        const response = await fetch('https://api.github.com/repos/CodyJasonBennett/amongus-vr');
+        const { updated_at } = await response.json();
+        const version = updated_at.replaceAll('-', '.').split('T')[0];
+
+        return setVersion(`v${version}`);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    fetchVersion();
+  }, []);
+
+  useMemo(() => {
+    const minPlayers = recommendedPlayers[impostors];
+
+    if (maxPlayers < minPlayers) {
+      setMaxPlayers(minPlayers);
+    }
+  }, [maxPlayers, recommendedPlayers, impostors]);
+
+  useEffect(() => {
+    dispatch({ type: 'setUsername', value: usernameInput.value });
+  }, [usernameInput.value, dispatch]);
 
   return (
     <section className="menu">
@@ -25,6 +104,7 @@ const Menu = () => {
         />
       </Helmet>
       <Stars />
+      <p className="menu__version">{version}</p>
       {menuState === 'home' &&
         <Fragment>
           <div className="menu__content">
@@ -47,7 +127,8 @@ const Menu = () => {
             <Input
               className="menu__username"
               placeholder="Username"
-              {...username}
+              pattern=".{1,}"
+              {...usernameInput}
             />
             <div className="menu__item">
               <img
@@ -61,6 +142,7 @@ const Menu = () => {
                 <Button
                   secondary
                   className="menu__item-button"
+                  onClick={() => setMenuState('create')}
                 >
                   Create Game
                 </Button>
@@ -78,6 +160,7 @@ const Menu = () => {
                 <Button
                   secondary
                   className="menu__item-button"
+                  onClick={() => setMenuState('public')}
                 >
                   Find Game
                 </Button>
@@ -92,12 +175,20 @@ const Menu = () => {
               <div className="menu__item-content">
                 <label className="menu__item-label">Private</label>
                 <div className="menu__item-divider" />
-                <Input
-                  className="menu__item-button"
-                  placeholder="Enter Code"
-                  style={{ width: '245px' }}
-                  {...code}
-                />
+                <form className="menu__item-input" onSubmit={onSubmit}>
+                  <Input
+                    className="menu__item-button"
+                    placeholder="Enter Code"
+                    style={{ width: '245px' }}
+                    pattern=".{1,}"
+                    required
+                    {...codeInput}
+                  />
+                  <ChevronRight
+                    onMouseEnter={toggleSelect}
+                    onMouseDown={toggleClick}
+                  />
+                </form>
               </div>
             </div>
           </div>
@@ -108,6 +199,204 @@ const Menu = () => {
             Back
           </Button>
         </Fragment>
+      }
+      {menuState === 'create' &&
+        <Fragment>
+          <div className="menu__content">
+            <img
+              className="menu__map"
+              alt={`Skeld with ${impostors} Impostor`}
+              src={[skeld1, skeld2, skeld3][impostors - 1]}
+            />
+            <div className="menu__options">
+              <div className="menu__option">
+                <label className="menu__label">
+                  Map:
+                </label>
+                <div className="menu__map-selector">
+                  {[
+                    {
+                      name: 'Skeld',
+                      src: skeldLabel
+                    },
+                    {
+                      name: 'Mira HQ',
+                      src: miraLabel,
+                    },
+                    {
+                      name: 'Polus',
+                      src: polusLabel,
+                    },
+                  ].map(({ name, src }, index) => (
+                    <img
+                      key={index}
+                      className={classNames('menu__map-label', {
+                        'menu__map-label--active': map === index
+                      })}
+                      alt={name}
+                      src={src}
+                      onClick={index === 0 ? () => setMap(index) : null}
+                      onMouseDown={toggleClick}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="menu__option">
+                <label className="menu__label">
+                  Impostors:
+                </label>
+                {[1, 2, 3].map(count => (
+                  <Button
+                    key={count}
+                    secondary
+                    className={classNames('menu__option-button', {
+                      'menu__option-button--disabled': impostors !== count
+                    })}
+                    onClick={() => setImpostors(count)}
+                  >
+                    {count}
+                  </Button>
+                ))}
+              </div>
+              <div className="menu__option">
+                <label className="menu__label">
+                  Max Players:
+                </label>
+                {[4, 5, 6, 7, 8, 9, 10].map(count => (
+                  <Button
+                    key={count}
+                    secondary
+                    className={classNames('menu__option-button', {
+                      'menu__option-button--disabled': maxPlayers !== count,
+                      'menu__option-button--invalid': count < recommendedPlayers[impostors]
+                    })}
+                    onClick={count < recommendedPlayers[impostors] ? null : () => setMaxPlayers(count)}
+                  >
+                    {count}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <Button
+            className="menu__nav-button"
+            onClick={() => setMenuState('play')}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="menu__nav-button"
+            style={{ right: '12px', left: 'unset' }}
+          >
+            Confirm
+          </Button>
+        </Fragment>
+      }
+      {menuState === 'public' &&
+      <Fragment>
+        <div className="menu__content">
+          <div className="menu__options">
+            <div className="menu__option">
+              <label className="menu__label">
+                Map:
+              </label>
+              <div className="menu__map-selector">
+                {[
+                  {
+                    name: 'Skeld',
+                    src: skeldLabel
+                  },
+                  {
+                    name: 'Mira HQ',
+                    src: miraLabel,
+                  },
+                  {
+                    name: 'Polus',
+                    src: polusLabel,
+                  },
+                ].map(({ name, src }, index) => (
+                  <img
+                    key={index}
+                    className={classNames('menu__map-label', {
+                      'menu__map-label--active': mapFilter === index
+                    })}
+                    alt={name}
+                    src={src}
+                    onClick={index === 0 ? () => setMapFilter(index) : null}
+                    onMouseDown={toggleClick}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="menu__option">
+              <label className="menu__label">
+                Impostors:
+              </label>
+              {['Any', 1, 2, 3].map(count => (
+                <Button
+                  key={count}
+                  secondary
+                  className={classNames('menu__option-button', {
+                    'menu__option-button--disabled': impostorsFilter !== count
+                  })}
+                  onClick={() => setImpostorsFilter(count)}
+                  style={{ color: '#DD2200' }}
+                >
+                  {count}
+                </Button>
+              ))}
+            </div>
+            <div className="menu__lobby">
+              <div className="menu__lobby-list">
+                {filterLobbies(mapFilter, impostorsFilter).length === 0 &&
+                  <label className="menu__lobby-item-text">There aren't any active lobbies.</label>
+                }
+                {filterLobbies(mapFilter, impostorsFilter).map(({ id, map, impostors, players, maxPlayers }) => (
+                  <Link className="menu__lobby-item"
+                    key={id}
+                    onMouseEnter={toggleSelect}
+                    onMouseDown={toggleClick}
+                    to={`/lobby/${id}`}
+                  >
+                    <div className="menu__lobby-item-property">
+                      <img
+                        className="menu__lobby-item-icon"
+                        src={[skeldIcon, miraIcon, polusIcon][map]}
+                        alt="Map"
+                      />
+                      <label className="menu__lobby-item-text">Red</label>
+                    </div>
+                    <div className="menu__lobby-item-property">
+                      <div className="menu__lobby-item-property">
+                        <label className="menu__lobby-item-text" style={{ color: '#DD2200' }}>{impostors}</label>
+                        <img
+                          className="menu__lobby-item-icon"
+                          src={impostorIcon}
+                          alt="Impostors"
+                        />
+                      </div>
+                      <div className="menu__lobby-item-property">
+                        <label className="menu__lobby-item-text">{players}/{maxPlayers}</label>
+                        <img
+                          className="menu__lobby-item-icon"
+                          src={playersIcon}
+                          alt="Players"
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <Button
+          className="menu__nav-button"
+          onClick={() => setMenuState('play')}
+        >
+          Back
+        </Button>
+      </Fragment>
       }
     </section>
   );

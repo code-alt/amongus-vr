@@ -1,3 +1,4 @@
+import useAppContext from './useAppContext';
 import useAudio from './useAudio';
 import useFormInput from './useFormInput';
 import useId from './useId';
@@ -10,6 +11,7 @@ import usePrevious from './usePrevious';
 import useWindowSize from './useWindowSize';
 
 export {
+  useAppContext,
   useAudio,
   useFormInput,
   useId,

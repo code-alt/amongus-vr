@@ -18,6 +18,10 @@ import purple1 from 'assets/models/purple1.png';
 import purple2 from 'assets/models/purple2.png';
 import red1 from 'assets/models/red1.png';
 import red2 from 'assets/models/red2.png';
+import white1 from 'assets/models/white1.png';
+import white2 from 'assets/models/white2.png';
+import yellow1 from 'assets/models/yellow1.png';
+import yellow2 from 'assets/models/yellow2.png';
 
 const textures = {
   black1,
@@ -40,6 +44,10 @@ const textures = {
   purple2,
   red1,
   red2,
+  white1,
+  white2,
+  yellow1,
+  yellow2,
 };
 
 export default textures;
