@@ -84,16 +84,16 @@ const Menu = () => {
   }, []);
 
   useMemo(() => {
+    dispatch({ type: 'setUsername', value: usernameInput.value });
+  }, [usernameInput.value, dispatch]);
+
+  useMemo(() => {
     const minPlayers = recommendedPlayers[impostors];
 
     if (maxPlayers < minPlayers) {
       setMaxPlayers(minPlayers);
     }
   }, [maxPlayers, recommendedPlayers, impostors]);
-
-  useEffect(() => {
-    dispatch({ type: 'setUsername', value: usernameInput.value });
-  }, [usernameInput.value, dispatch]);
 
   return (
     <section className="menu">

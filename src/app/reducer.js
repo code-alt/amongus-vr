@@ -7,10 +7,15 @@ export function reducer(state, action) {
   const { type, value } = action;
 
   switch (type) {
-    case 'setUsername':
-      return { ...state, username: value };
+    case 'setUsername': {
+      const username = action.value;
+      window.localStorage.setItem('username', JSON.stringify(username));
+      return { ...state, username };
+    }
     case 'setColor': {
-      return { ...state, color: value };
+      const color = action.value;
+      window.localStorage.setItem('color', JSON.stringify(color));
+      return { ...state, color };
     }
     default:
       throw new Error();
