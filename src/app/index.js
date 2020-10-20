@@ -36,7 +36,7 @@ export const fontStyles = `
 
 const App = () => {
   const [storedUsername] = useLocalStorage('username', null);
-  const [storedColor] = useLocalStorage('color', null);
+  const [storedColor] = useLocalStorage('color', 'red');
   const [state, dispatch] = useReducer(reducer, initialState);
   const prefersReducedMotion = usePrefersReducedMotion();
 

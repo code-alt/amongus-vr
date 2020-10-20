@@ -1,6 +1,6 @@
 export const initialState = {
   username: null,
-  color: null,
+  color: 'red',
 };
 
 export function reducer(state, action) {
