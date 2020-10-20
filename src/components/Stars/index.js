@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { utils, Graphics, Container, filters, Application } from 'pixi.js';
+import { utils, Graphics, Container, filters, Application } from 'pixi.js-legacy';
 import { randomInt } from 'mathjs';
 import './index.css';
 

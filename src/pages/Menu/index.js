@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, Fragment } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, Fragment, Suspense } from 'react';
 import classNames from 'classnames';
 import { useHistory, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -8,6 +8,7 @@ import { ReactComponent as ChevronRight } from 'assets/chevronRight.svg';
 import Button from 'components/Button';
 import Input from 'components/Input';
 import { useAppContext, useFormInput, useAudio } from 'hooks';
+import prerender from 'utils/prerender';
 import select from 'assets/sounds/select.mp3';
 import click from 'assets/sounds/click.mp3';
 import hostIcon from 'assets/host.png';
@@ -103,7 +104,11 @@ const Menu = () => {
           content="A VR-ready recreation of the indie game: Among Us."
         />
       </Helmet>
-      <Stars />
+      {!prerender &&
+        <Suspense fallback={null}>
+          <Stars />
+        </Suspense>
+      }
       <p className="menu__version">{version}</p>
       {menuState === 'home' &&
         <Fragment>
