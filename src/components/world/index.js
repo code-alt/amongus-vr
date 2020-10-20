@@ -23,8 +23,8 @@ import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerM
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import innerHeight from 'ios-inner-height';
 import { renderPixelRatio, cleanScene, removeLights, cleanRenderer } from 'utils/three';
-import skeldModelPath from 'assets/skeld.glb';
-import astronautModelPath from 'assets/astronaut.glb';
+import skeldModelPath from 'assets/models/skeld.glb';
+import astronautModelPath from 'assets/models/astronaut.glb';
 import textures from './textures';
 import './index.css';
 
@@ -330,7 +330,7 @@ const World = ({
   return (
     <canvas
       aria-hidden
-      className="game"
+      className="world"
       ref={canvasRef}
       {...rest}
     />

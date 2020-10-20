@@ -2,12 +2,34 @@ import React, { lazy, Suspense, useEffect, Fragment } from 'react';
 import { BrowserRouter, Switch, Route, useLocation } from 'react-router-dom';
 import { Transition, config as transitionConfig } from 'react-transition-group';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
+import VCROSDMono from 'assets/fonts/vcr-osd-mono.woff2';
+import AmongUs from 'assets/fonts/among-us.woff2';
 import { usePrefersReducedMotion } from 'hooks';
 import { reflow } from 'utils/transition';
+import prerender from 'utils/prerender';
 import './reset.css';
 import './index.css';
 
-const Home = lazy(() => import('pages/Home'));
+const Menu = lazy(() => import('pages/Menu'));
+const Lobby = lazy(() => import('pages/Lobby'));
+const Game = lazy(() => import('pages/Game'));
+const NotFound = lazy(() => import('pages/404'));
+
+const repoPrompt = `Designed and developed by Cody Bennett\n\nCheck out the source code: https://github.com/CodyJasonBennett/amongus-vr`;
+
+export const fontStyles = `
+  @font-face {
+    font-family: "VCR-OSD-Mono";
+    src: url(${VCROSDMono}) format("woff");
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "amongus";
+    src: url(${AmongUs}) format("woff2");
+    font-display: swap;
+  }
+`;
 
 const App = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -21,6 +43,10 @@ const App = () => {
   }, [prefersReducedMotion]);
 
   useEffect(() => {
+    if (!prerender) {
+      console.info(`${repoPrompt}\n\n`);
+    }
+
     window.history.scrollRestoration = 'manual';
   }, []);
 
@@ -40,7 +66,10 @@ const AppRoutes = () => {
   return (
     <Fragment>
       <Helmet>
-        <link rel="canonical" href={`https://codyb.co${pathname}`} />
+        <link rel="canonical" href={`https://amongus.codyb.co${pathname}`} />
+        <link rel="preload" href={VCROSDMono} as="font" crossorigin="" />
+        <link rel="preload" href={AmongUs} as="font" crossorigin="" />
+        <style>{fontStyles}</style>
       </Helmet>
       <Transition
         key={pathname}
@@ -50,7 +79,10 @@ const AppRoutes = () => {
         {status => (
           <Suspense fallback={<Fragment />}>
             <Switch location={location}>
-              <Route component={Home} />
+              <Route exact path="/" component={Menu} />
+              <Route exact path={['/lobby', '/lobby/:id']} component={Lobby} />
+              <Route exact path={['/game', '/game/:id']} component={Game} />
+              <Route component={NotFound} />
             </Switch>
           </Suspense>
         )}

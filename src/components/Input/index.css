@@ -1,0 +1,36 @@
+.input {
+  --inputFontSize: calc((40 / 16) * 1rem);
+  --inputPadding: 8px 16px;
+  --inputTextColor: rgb(255, 255, 255);
+  --inputTextVisibility: visible;
+
+  border-radius: 12px;
+  border: 6px solid white;
+  cursor: pointer;
+  outline: 0;
+  padding: var(--inputPadding);
+  position: relative;
+}
+
+.input,
+.input::placeholder {
+  color: var(--inputTextColor);
+  font-family: sans-serif;
+  font-size: var(--inputFontSize);
+  font-weight: 400;
+  line-height: 1.2;
+  opacity: 1;
+  position: relative;
+  visibility: var(--inputTextVisibility);
+  display: block;
+  width: 100%;
+}
+
+
+.input:hover {
+  border: 6px solid #01ff00;
+}
+
+.input:active {
+  box-shadow: none;
+}

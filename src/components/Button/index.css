@@ -1,0 +1,46 @@
+.button {
+  --buttonOffset: 20;
+  --buttonFontSize: calc((120 / 16) * 1rem);
+  --buttonPadding: 0 36px;
+  --buttonTextColor: rgb(255, 255, 255);
+  --buttonTextVisibility: visible;
+
+  align-items: center;
+  border-radius: 12px;
+  border: 6px solid white;
+  color: var(--buttonTextColor);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  outline: none;
+  padding: var(--buttonPadding);
+  position: relative;
+}
+
+.button--secondary {
+  --buttonOffset: 0;
+  --buttonPadding: 8px 16px;
+
+  font-family: sans-serif;
+  font-weight: 400;
+}
+
+.button:hover {
+  border: 6px solid #01ff00;
+}
+
+.button:active {
+  box-shadow: none;
+}
+
+.button__text {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  font-size: var(--buttonFontSize);
+  justify-content: center;
+  line-height: 1;
+  position: relative;
+  top: calc(var(--buttonFontSize) / var(--buttonOffset));
+  visibility: var(--buttonTextVisibility);
+}

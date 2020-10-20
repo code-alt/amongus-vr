@@ -1,3 +1,6 @@
+import useAudio from './useAudio';
+import useFormInput from './useFormInput';
+import useId from './useId';
 import useInterval from './useInterval';
 import useInViewport from './useInViewport';
 import useLocalStorage from './useLocalStorage';
@@ -7,6 +10,9 @@ import usePrevious from './usePrevious';
 import useWindowSize from './useWindowSize';
 
 export {
+  useAudio,
+  useFormInput,
+  useId,
   useInterval,
   useInViewport,
   useLocalStorage,
