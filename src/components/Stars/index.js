@@ -1,78 +1,70 @@
 import React, { useRef, useEffect } from 'react';
-import { utils, Graphics, Container, filters, Application } from 'pixi.js-legacy';
 import { randomInt } from 'mathjs';
 import './index.css';
 
 function Stars() {
-  const sceneRef = useRef();
-  const container = useRef();
-  const app = useRef();
-  const stars = useRef([]);
-  const blurFilter = useRef(new filters.BlurFilter(0.5));
   const width = useRef(window.innerWidth);
   const height = useRef(window.innerHeight);
+  const start = useRef(Date.now());
+  const canvasRef = useRef();
+  const context = useRef();
+  const stars = useRef([]);
 
   useEffect(() => {
-    utils.skipHello();
-    container.current = new Container();
+    context.current = canvasRef.current.getContext('2d');
+    canvasRef.current.width = width.current;
+    canvasRef.current.height = height.current;
 
     for (let i = 0; i < 100; i++) {
       const size = randomInt(1, 4);
 
-      const star = new Graphics();
-      star.beginFill(0xe6e6e6);
-      star.drawCircle(0, randomInt(5, height.current), size);
-      star.name = size.toString();
-      star.x = randomInt(5, width.current);
-      star.endFill();
-      star.filters = [blurFilter.current];
+      const star = {
+        x: randomInt(5, width.current),
+        y: randomInt(5, height.current),
+        name: size.toString(),
+        size,
+      };
 
-      container.current.addChild(star);
       stars.current.push(star);
+
+      context.current.beginPath();
+      context.current.arc(star.x, star.y, star.size, 0, 2 * Math.PI);
+      context.current.fillStyle = "#e6e6e6";
+      context.current.fill();
     }
-
-    function moveStars(delta) {
-      for (let i = 0; i < 100; i++) {
-        stars.current[i].x += delta * parseInt(stars.current[i].name, 10) * 0.2;
-        if (stars.current[i].x > width.current) stars.current[i].x = 0;
-      }
-    }
-
-    app.current = new Application({ antialias: true });
-
-    sceneRef.current.appendChild(app.current.view);
-    app.current.ticker.add(draw);
-
-    app.current.stage = container.current;
-
-    function draw(delta) {
-      moveStars(delta);
-    }
-
-    return () => {
-      container.current.destroy({
-        children: true,
-        texture: true,
-        baseTexture: true
-      });
-      app.current.destroy();
-    };
   }, []);
 
   useEffect(() => {
-    const handleResize = () => {
-      app.current.renderer.resize(window.innerWidth, window.innerHeight);
+    let animation;
+
+    const animate = () => {
+      animation = requestAnimationFrame(animate);
+
+      const time = Date.now();
+      const delta = (start.current - time) * -0.08;
+      start.current = time;
+
+      context.current.clearRect(0, 0, width.current, height.current);
+
+      for (let i = 0; i < 100; i++) {
+        stars.current[i].x += delta * parseInt(stars.current[i].name, 10) * 0.2;
+        if (stars.current[i].x > width.current) stars.current[i].x = 0;
+
+        context.current.beginPath();
+        context.current.arc(stars.current[i].x, stars.current[i].y, stars.current[i].size, 0, 2 * Math.PI);
+        context.current.fillStyle = "#e6e6e6";
+        context.current.fill();
+      }
     };
 
-    window.addEventListener("resize", handleResize);
-    handleResize();
+    animate();
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animation);
     };
   }, []);
 
-  return <div className="stars" ref={sceneRef}></div>;
+  return <canvas className="stars" ref={canvasRef}></canvas>;
 }
 
 export default Stars;

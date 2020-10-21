@@ -1,12 +1,8 @@
 .stars {
-  position: absolute;
+  position: fixed;
   width: 100vw;
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-}
-
-.stars canvas {
-  display: block;
 }

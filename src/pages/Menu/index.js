@@ -371,7 +371,7 @@ const Menu = () => {
                       />
                       <label className="menu__lobby-item-text">Red</label>
                     </div>
-                    <div className="menu__lobby-item-property">
+                    <div className="menu__lobby-item-properties">
                       <div className="menu__lobby-item-property">
                         <label className="menu__lobby-item-text" style={{ color: '#DD2200' }}>{impostors}</label>
                         <img

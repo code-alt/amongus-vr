@@ -22,9 +22,9 @@
   "dependencies": {
     "@mdx-js/react": "^1.6.18",
     "classnames": "^2.2.6",
+    "comlink-loader": "^2.0.0",
     "ios-inner-height": "^1.1.1",
     "mathjs": "^7.5.1",
-    "pixi.js-legacy": "^5.3.3",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-helmet-async": "^1.0.7",

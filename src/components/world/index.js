@@ -63,9 +63,9 @@ const World = (props) => {
   const cameraVector = useRef(new Vector3());
   const prevGamePads = useRef(new Map());
   const wallNodes = useRef([]);
-  const raycasterVector1 = useRef(new Vector3(0, 0, -1));
-  const raycasterVector2 = useRef(new Vector3(0, 1, 0));
   const raycaster = useRef(new Raycaster());
+  const zAxis = useRef(new Vector3(0, 0, -1));
+  const yAxis = useRef(new Vector3(0, 1, 0));
 
   const rotatePlayer = () => {
     if (astronaut.current) {
@@ -96,6 +96,7 @@ const World = (props) => {
           }
           if (!source.gamepad) continue;
 
+          const oldPosition = player.current.position.copy();
           const old = prevGamePads.current.get(source);
           const data = {
             handedness,
@@ -134,20 +135,14 @@ const World = (props) => {
               const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
 
               const origin = player.current.position;
-              const direction = raycasterVector1.current.applyAxisAngle(raycasterVector2.current, cameraRef.rotation.y);
-              raycaster.current.set(origin, direction);
+              const direction = zAxis.current.applyAxisAngle(yAxis.current, cameraRef.rotation.y);
+              raycaster.set(origin, direction);
 
               const collisions = raycaster.current.intersectObjects(wallNodes.current);
               if (collisions.length > 0 && collisions[0].distance <= 1) {
-                if (data.handedness === 'left') {
-                  player.current.position.x += cameraVector.current.z * movementSpeed * data.axes[2];
-                  player.current.position.z -= cameraVector.current.x * movementSpeed * data.axes[2];
-                }
-
-                if (data.handedness === 'right') {
-                  player.current.position.x += cameraVector.current.x * movementSpeed * data.axes[3];
-                  player.current.position.z += cameraVector.current.z * movementSpeed * data.axes[3];
-                }
+                player.current.position.x += oldPosition.position.x + player.current.position.x;
+                player.current.position.y += oldPosition.position.y + player.current.position.y;
+                player.current.position.z += oldPosition.position.z + player.current.position.z;
 
                 controls.current.update();
               };
@@ -238,6 +233,8 @@ const World = (props) => {
           wallNodes.current.push(node);
         }
       });
+
+      skeld.current.position.z = -4;
 
       scene.current.add(skeld.current);
     });
