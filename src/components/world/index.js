@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Clock,
   Vector3,
@@ -19,7 +19,7 @@ import {
   DoubleSide,
   Group,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import Controls from 'components/Controls';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -32,17 +32,11 @@ import astronautModelPath from 'assets/models/astronaut.glb';
 import textures from './textures';
 import './index.css';
 
-function isIterable(obj) {
-  // checks for null and undefined
-  if (obj === null) return false;
-
-  return typeof obj[Symbol.iterator] === 'function';
-}
-
 const PLAYER_SPEED = 1;
 const PLAYER_VISION = 1;
 
 const World = (props) => {
+  const supportsVR = 'xr' in navigator;
   const { username, color } = useAppContext();
   const clock = useRef(new Clock());
   const canvasRef = useRef();
@@ -61,83 +55,9 @@ const World = (props) => {
   const mixer = useRef();
   const astronaut = useRef();
   const player = useRef();
-  const cameraVector = useRef(new Vector3());
-  const prevGamePads = useRef(new Map());
   const raycaster = useRef(new Raycaster());
   const raycasterDirection = useRef(new Vector3(0, -1, 0));
   const oldPosition = useRef(new Vector3());
-
-  const rotatePlayer = () => {
-    if (astronaut.current) {
-      const session = renderer.current.xr.getSession();
-      const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
-
-      const diffX = cameraRef.position.x - astronaut.current.position.x;
-      const diffZ = cameraRef.position.z - astronaut.current.position.z;
-
-      astronaut.current.rotation.y = Math.atan2(diffX, diffZ) + Math.PI;
-    }
-  };
-
-  const movePlayer = useCallback(() => {
-    let handedness = 'unknown';
-
-    const session = renderer.current.xr.getSession();
-
-    if (session) {
-      const xrCamera = renderer.current.xr.getCamera(camera.current);
-      xrCamera.getWorldDirection(cameraVector.current);
-
-      if (isIterable(session.inputSources)) {
-        for (const source of session.inputSources) {
-          if (source && source.handedness) {
-            // left or right controllers
-            handedness = source.handedness;
-          }
-          if (!source.gamepad) continue;
-
-          const old = prevGamePads.current.get(source);
-          const data = {
-            handedness,
-            axes: source.gamepad.axes.slice(0),
-          };
-
-          if (old) {
-            const movementSpeed = PLAYER_SPEED * 0.1;
-
-            if (mixer) {
-              const delta = clock.current.getDelta();
-              mixer.current.update(delta);
-            }
-
-            data.axes.forEach((value, i) => {
-              if (i === 2) {
-                // left and right axis on thumbsticks
-                if (data.handedness === 'left') {
-                  player.current.position.x -= cameraVector.current.z * movementSpeed * data.axes[2];
-                  player.current.position.z += cameraVector.current.x * movementSpeed * data.axes[2];
-                }
-
-                controls.current.update();
-              }
-
-              if (i === 3) {
-                // up and down axis on thumbsticks
-                if (data.handedness === 'right') {
-                  player.current.position.x -= cameraVector.current.x * movementSpeed * data.axes[3];
-                  player.current.position.z -= cameraVector.current.z * movementSpeed * data.axes[3];
-                }
-
-                controls.current.update();
-              }
-            });
-          }
-
-          prevGamePads.current.set(source, data);
-        }
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const { innerWidth, innerHeight } = window;
@@ -152,35 +72,33 @@ const World = (props) => {
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
     renderer.current.xr.setFramebufferScaleFactor(2.0);
-    if ('xr' in navigator) document.body.appendChild(VRButton.createButton(renderer.current));
+    if (supportsVR) document.body.appendChild(VRButton.createButton(renderer.current));
 
     camera.current = new PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 500);
-    camera.current.position.set(0, 1.6, 3);
-
-    controls.current = new OrbitControls(camera.current, renderer.current.domElement);
-    controls.current.target.set(0, 1.6, 0);
-    controls.current.update();
+    camera.current.position.set(0, 1.6, 0);
 
     scene.current = new Scene();
     scene.current.fog = new Fog(0x000000, 1, 30 * PLAYER_VISION);
 
-    controller1.current = renderer.current.xr.getController(0);
-    controller1.current.name = 'left';
-    scene.current.add(controller1.current);
+    if (supportsVR) {
+      controller1.current = renderer.current.xr.getController(0);
+      controller1.current.name = 'left';
+      scene.current.add(controller1.current);
 
-    controller2.current = renderer.current.xr.getController(1);
-    controller2.current.name = 'right';
-    scene.current.add(controller2.current);
+      controller2.current = renderer.current.xr.getController(1);
+      controller2.current.name = 'right';
+      scene.current.add(controller2.current);
 
-    const controllerModelFactory = new XRControllerModelFactory();
+      const controllerModelFactory = new XRControllerModelFactory();
 
-    controllerGrip1.current = renderer.current.xr.getControllerGrip(0);
-    controllerGrip1.current.add(controllerModelFactory.createControllerModel(controllerGrip1.current));
-    scene.current.add(controllerGrip1.current);
+      controllerGrip1.current = renderer.current.xr.getControllerGrip(0);
+      controllerGrip1.current.add(controllerModelFactory.createControllerModel(controllerGrip1.current));
+      scene.current.add(controllerGrip1.current);
 
-    controllerGrip2.current = renderer.current.xr.getControllerGrip(1);
-    controllerGrip2.current.add(controllerModelFactory.createControllerModel(controllerGrip2.current));
-    scene.current.add(controllerGrip2.current);
+      controllerGrip2.current = renderer.current.xr.getControllerGrip(1);
+      controllerGrip2.current.add(controllerModelFactory.createControllerModel(controllerGrip2.current));
+      scene.current.add(controllerGrip2.current);
+    }
 
     const canvas = document.createElement('canvas');
     const size = 256;
@@ -275,17 +193,26 @@ const World = (props) => {
       player.current.add(playerLabel.current);
       player.current.add(astronaut.current);
       player.current.add(camera.current);
-      player.current.add(controller1.current);
-      player.current.add(controller2.current);
-      player.current.add(controllerGrip1.current);
-      player.current.add(controllerGrip2.current);
+      if (supportsVR) {
+        player.current.add(controller1.current);
+        player.current.add(controller2.current);
+        player.current.add(controllerGrip1.current);
+        player.current.add(controllerGrip2.current);
+      }
+
+      controls.current = new Controls(
+        player.current,
+        camera.current,
+        renderer.current,
+        PLAYER_SPEED,
+      );
     });
 
     return () => {
       cleanScene(scene.current);
       cleanRenderer(renderer.current);
     };
-  }, [username, color]);
+  }, [supportsVR, username, color]);
 
   useEffect(() => {
     const spotLight = new DirectionalLight(0xFFFFFF);
@@ -330,20 +257,35 @@ const World = (props) => {
       if (player.current && nav.current) {
         oldPosition.current.copy(player.current.position);
 
-        rotatePlayer();
-        movePlayer();
+        if (astronaut.current) {
+          const session = renderer.current.xr.getSession();
+          const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
+
+          const diffX = cameraRef.position.x - astronaut.current.position.x;
+          const diffZ = cameraRef.position.z - astronaut.current.position.z;
+
+          astronaut.current.rotation.y = Math.atan2(diffX, diffZ);
+        }
+
+        controls.current.update();
 
         const origin = player.current.position;
         const direction = raycasterDirection.current.normalize();
         raycaster.current.set(origin, direction);
 
         const collisions = raycaster.current.intersectObject(nav.current);
-        if (collisions.length === 0) {
-          player.current.position.x += oldPosition.current.x - player.current.position.x;
-          player.current.position.y += oldPosition.current.y - player.current.position.y;
-          player.current.position.z += oldPosition.current.z - player.current.position.z;
 
-          controls.current.update();
+        const diffX = oldPosition.current.x - player.current.position.x;
+        const diffZ = oldPosition.current.z - player.current.position.z;
+
+        if ((diffX || diffZ) && mixer.current) {
+          const delta = clock.current.getDelta();
+          mixer.current.update(delta);
+        }
+
+        if (collisions.length === 0) {
+          player.current.position.x += diffX;
+          player.current.position.z += diffZ;
         };
       }
 
@@ -355,7 +297,7 @@ const World = (props) => {
     return () => {
       renderer.current.setAnimationLoop(null);
     };
-  }, [movePlayer]);
+  }, []);
 
   return (
     <canvas
