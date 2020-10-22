@@ -41,7 +41,7 @@ function filterLobbies(mapFilter, impostorsFilter) {
   return lobbies.filter(({ map, impostors }) =>
     mapFilter === map &&
     impostorsFilter === 'Any' ? true : impostorsFilter === impostors
-  )
+  );
 }
 
 const Menu = () => {

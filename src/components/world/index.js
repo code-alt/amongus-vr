@@ -21,6 +21,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
@@ -57,15 +58,15 @@ const World = (props) => {
   const controllerGrip2 = useRef();
   const playerLabel = useRef();
   const skeld = useRef();
+  const nav = useRef();
   const mixer = useRef();
   const astronaut = useRef();
   const player = useRef();
   const cameraVector = useRef(new Vector3());
   const prevGamePads = useRef(new Map());
-  const wallNodes = useRef([]);
   const raycaster = useRef(new Raycaster());
-  const zAxis = useRef(new Vector3(0, 0, -1));
-  const yAxis = useRef(new Vector3(0, 1, 0));
+  const raycasterDirection = useRef(new Vector3(0, -1, 0));
+  const oldPosition = useRef(new Vector3());
 
   const rotatePlayer = () => {
     if (astronaut.current) {
@@ -96,7 +97,6 @@ const World = (props) => {
           }
           if (!source.gamepad) continue;
 
-          const oldPosition = player.current.position.copy();
           const old = prevGamePads.current.get(source);
           const data = {
             handedness,
@@ -131,21 +131,6 @@ const World = (props) => {
 
                 controls.current.update();
               }
-
-              const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
-
-              const origin = player.current.position;
-              const direction = zAxis.current.applyAxisAngle(yAxis.current, cameraRef.rotation.y);
-              raycaster.set(origin, direction);
-
-              const collisions = raycaster.current.intersectObjects(wallNodes.current);
-              if (collisions.length > 0 && collisions[0].distance <= 1) {
-                player.current.position.x += oldPosition.position.x + player.current.position.x;
-                player.current.position.y += oldPosition.position.y + player.current.position.y;
-                player.current.position.z += oldPosition.position.z + player.current.position.z;
-
-                controls.current.update();
-              };
             });
           }
 
@@ -220,17 +205,26 @@ const World = (props) => {
     playerLabel.current.position.y = 1.7;
     scene.current.add(playerLabel.current);
 
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('/draco/');
+    dracoLoader.setDecoderConfig({ type: 'js' });
+
     const modelLoader = new GLTFLoader();
+    modelLoader.setDRACOLoader(dracoLoader);
 
     modelLoader.load(skeldModelPath, (model) => {
       skeld.current = model.scene;
 
       skeld.current.traverse(node => {
         if (node.isMesh) {
+          if (node.name === 'nav-mesh') {
+            node.visible = false;
+            node.position.y -= 1;
+            nav.current = node;
+          }
+
           node.frustumCulled = false;
           node.material.transparent = true;
-
-          wallNodes.current.push(node);
         }
       });
 
@@ -332,8 +326,25 @@ const World = (props) => {
 
   useEffect(() => {
     const animate = () => {
-      rotatePlayer();
-      movePlayer();
+      if (player.current && nav.current) {
+        oldPosition.current.copy(player.current.position);
+
+        rotatePlayer();
+        movePlayer();
+
+        const origin = player.current.position;
+        const direction = raycasterDirection.current.normalize();
+        raycaster.current.set(origin, direction);
+
+        const collisions = raycaster.current.intersectObject(nav.current);
+        if (collisions.length === 0) {
+          player.current.position.x += oldPosition.current.x - player.current.position.x;
+          player.current.position.y += oldPosition.current.y - player.current.position.y;
+          player.current.position.z += oldPosition.current.z - player.current.position.z;
+
+          controls.current.update();
+        };
+      }
 
       renderer.current.render(scene.current, camera.current);
     };
