@@ -16,6 +16,7 @@ import {
   Sprite,
   TextureLoader,
   MeshBasicMaterial,
+  DoubleSide,
   Group,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -25,7 +26,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
-import { renderPixelRatio, cleanScene, removeLights, cleanRenderer } from 'utils/three';
+import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import skeldModelPath from 'assets/models/skeld.glb';
 import astronautModelPath from 'assets/models/astronaut.glb';
 import textures from './textures';
@@ -43,8 +44,6 @@ const PLAYER_VISION = 1;
 
 const World = (props) => {
   const { username, color } = useAppContext();
-  const width = useRef(window.innerWidth);
-  const height = useRef(window.innerHeight);
   const clock = useRef(new Clock());
   const canvasRef = useRef();
   const renderer = useRef();
@@ -141,20 +140,21 @@ const World = (props) => {
   }, []);
 
   useEffect(() => {
+    const { innerWidth, innerHeight } = window;
     renderer.current = new WebGLRenderer({
       canvas: canvasRef.current,
       powerPreference: 'high-performance',
       antialias: true,
     });
-    renderer.current.setSize(width.current, height.current);
-    renderer.current.setPixelRatio(renderPixelRatio);
+    renderer.current.setSize(innerWidth, innerHeight);
+    renderer.current.setPixelRatio(2);
     renderer.current.outputEncoding = sRGBEncoding;
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
     renderer.current.xr.setFramebufferScaleFactor(2.0);
     if ('xr' in navigator) document.body.appendChild(VRButton.createButton(renderer.current));
 
-    camera.current = new PerspectiveCamera(50, width.current / height.current, 0.1, 500);
+    camera.current = new PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 500);
     camera.current.position.set(0, 1.6, 3);
 
     controls.current = new OrbitControls(camera.current, renderer.current.domElement);
@@ -223,6 +223,7 @@ const World = (props) => {
             nav.current = node;
           }
 
+          node.material.side = DoubleSide;
           node.frustumCulled = false;
           node.material.transparent = true;
         }
