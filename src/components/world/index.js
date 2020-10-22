@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  Clock,
-  Vector3,
   Raycaster,
+  Vector3,
+  Clock,
   WebGLRenderer,
   sRGBEncoding,
   PerspectiveCamera,
@@ -10,54 +10,118 @@ import {
   Fog,
   DirectionalLight,
   HemisphereLight,
-  AnimationMixer,
-  Texture,
-  SpriteMaterial,
-  Sprite,
-  TextureLoader,
-  MeshBasicMaterial,
-  DoubleSide,
+  Object3D,
   Group,
 } from 'three';
 import Controls from 'components/Controls';
+import VRControllers from 'components/VRControllers';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
-import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
+import createPlayers from './createPlayers';
+import createMap from './createMap';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
-import skeldModelPath from 'assets/models/skeld.glb';
-import astronautModelPath from 'assets/models/astronaut.glb';
-import textures from './textures';
 import './index.css';
+
+const supportsVR = 'xr' in navigator;
+
+const players = [
+  {
+    color: 'red',
+    username: 'Red',
+    position: {
+      x: 0,
+      y: 0,
+      z: 4,
+    },
+    rotation: {
+      x: 0,
+      y: Math.PI,
+      z: 0,
+    },
+  },
+  {
+    color: 'blue',
+    username: 'Blue',
+    position: {
+      x: 0,
+      y: 0,
+      z: -4,
+    },
+    rotation: {
+      x: 0,
+      y: -Math.PI,
+      z: 0,
+    },
+  },
+  {
+    color: 'green',
+    username: 'Green',
+    position: {
+      x: -4,
+      y: 0,
+      z: 0,
+    },
+    rotation: {
+      x: 0,
+      y: Math.PI / -2,
+      z: 0,
+    },
+  },
+  {
+    color: 'yellow',
+    username: 'Yellow',
+    position: {
+      x: 4,
+      y: 0,
+      z: 0,
+    },
+    rotation: {
+      x: 0,
+      y: Math.PI / 2,
+      z: 0,
+    },
+  },
+];
+
+const map = [{
+  name: 'skeld',
+  position: {
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+  rotation: {
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+}];
 
 const PLAYER_SPEED = 1;
 const PLAYER_VISION = 1;
 
 const World = (props) => {
-  const supportsVR = 'xr' in navigator;
-  const { username, color } = useAppContext();
-  const clock = useRef(new Clock());
+  const { username } = useAppContext();
+  const [loaded, setLoaded] = useState(false);
+  const [playerModelData, setPlayerModelData] = useState();
+  const [mapModelData, setMapModelData] = useState();
+  const playerModels = useRef();
+  const mapModels = useRef();
+  const animations = useRef([]);
   const canvasRef = useRef();
   const renderer = useRef();
   const camera = useRef();
   const controls = useRef();
   const scene = useRef();
   const lights = useRef();
-  const controller1 = useRef();
-  const controller2 = useRef();
-  const controllerGrip1 = useRef();
-  const controllerGrip2 = useRef();
-  const playerLabel = useRef();
-  const skeld = useRef();
-  const nav = useRef();
-  const mixer = useRef();
-  const astronaut = useRef();
+  const controllers = useRef();
+  const navMesh = useRef();
   const player = useRef();
   const raycaster = useRef(new Raycaster());
   const raycasterDirection = useRef(new Vector3(0, -1, 0));
   const oldPosition = useRef(new Vector3());
+  const clock = useRef(new Clock());
 
   useEffect(() => {
     const { innerWidth, innerHeight } = window;
@@ -81,142 +145,30 @@ const World = (props) => {
     scene.current.fog = new Fog(0x000000, 1, 30 * PLAYER_VISION);
 
     if (supportsVR) {
-      controller1.current = renderer.current.xr.getController(0);
-      controller1.current.name = 'left';
-      scene.current.add(controller1.current);
-
-      controller2.current = renderer.current.xr.getController(1);
-      controller2.current.name = 'right';
-      scene.current.add(controller2.current);
-
-      const controllerModelFactory = new XRControllerModelFactory();
-
-      controllerGrip1.current = renderer.current.xr.getControllerGrip(0);
-      controllerGrip1.current.add(controllerModelFactory.createControllerModel(controllerGrip1.current));
-      scene.current.add(controllerGrip1.current);
-
-      controllerGrip2.current = renderer.current.xr.getControllerGrip(1);
-      controllerGrip2.current.add(controllerModelFactory.createControllerModel(controllerGrip2.current));
-      scene.current.add(controllerGrip2.current);
+      controllers.current = new VRControllers(renderer.current);
+      scene.current.add(controllers.current);
     }
 
-    const canvas = document.createElement('canvas');
-    const size = 256;
-    canvas.width = size;
-    canvas.height = size;
+    playerModels.current = new Group();
+    mapModels.current = new Group();
 
-    const context = canvas.getContext('2d');
-    context.fillStyle = '#ffffff';
-    context.textAlign = 'center';
-    context.font = '48px Arial';
-    context.fillText(username, size / 2, size / 2);
+    const playerConfigPromises = createPlayers(players, playerModels.current);
 
-    const playerLabelTexture = new Texture(canvas);
-    playerLabelTexture.needsUpdate = true;
+    setPlayerModelData(playerConfigPromises);
 
-    const playerLabelMaterial = new SpriteMaterial({
-      map: playerLabelTexture,
-      transparent: true,
-    });
+    const mapConfigPromises = createMap(map, mapModels.current);
 
-    playerLabel.current = new Sprite(playerLabelMaterial);
-    playerLabel.current.position.y = 1.7;
-    scene.current.add(playerLabel.current);
-
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/draco/');
-    dracoLoader.setDecoderConfig({ type: 'js' });
-
-    const modelLoader = new GLTFLoader();
-    modelLoader.setDRACOLoader(dracoLoader);
-
-    modelLoader.load(skeldModelPath, (model) => {
-      skeld.current = model.scene;
-
-      skeld.current.traverse(node => {
-        if (node.isMesh) {
-          if (node.name === 'nav-mesh') {
-            node.visible = false;
-            node.position.y -= 1;
-            nav.current = node;
-          }
-
-          node.material.side = DoubleSide;
-          node.frustumCulled = false;
-          node.material.transparent = true;
-        }
-      });
-
-      skeld.current.position.z = -4;
-
-      scene.current.add(skeld.current);
-    });
-
-    modelLoader.load(astronautModelPath, (model) => {
-      astronaut.current = model.scene;
-
-      const textureLoader = new TextureLoader();
-
-      astronaut.current.traverse(node => {
-        if (node.isMesh && node.material.name === 'Astronaut') {
-          const texture = textureLoader.load(textures[`${color}1`]);
-          texture.encoding = sRGBEncoding;
-          const material = new MeshBasicMaterial({ map: texture });
-          material.skinning = true;
-
-          node.material = material;
-        } else if (node.isMesh && node.material.name === 'Astronaut_backpack') {
-          const texture = textureLoader.load(textures[`${color}2`]);
-          texture.encoding = sRGBEncoding;
-          const material = new MeshBasicMaterial({ map: texture });
-          material.skinning = true;
-
-          node.material = material;
-        } else if (node.isMesh) {
-          const material = new MeshBasicMaterial({ color: 0x000000 });
-          material.skinning = true;
-
-          node.material = material;
-        }
-      });
-
-      mixer.current = new AnimationMixer(astronaut.current);
-      mixer.current.clipAction(model.animations[0]).play();
-
-      astronaut.current.scale.set(0.32, 0.32, 0.32);
-      scene.current.add(astronaut.current);
-
-      player.current = new Group();
-      player.current.position.set(0, 0, 0);
-      player.current.name = 'player';
-      scene.current.add(player.current);
-      player.current.add(playerLabel.current);
-      player.current.add(astronaut.current);
-      player.current.add(camera.current);
-      if (supportsVR) {
-        player.current.add(controller1.current);
-        player.current.add(controller2.current);
-        player.current.add(controllerGrip1.current);
-        player.current.add(controllerGrip2.current);
-      }
-
-      controls.current = new Controls(
-        player.current,
-        camera.current,
-        renderer.current,
-        PLAYER_SPEED,
-      );
-    });
+    setMapModelData(mapConfigPromises);
 
     return () => {
       cleanScene(scene.current);
       cleanRenderer(renderer.current);
     };
-  }, [supportsVR, username, color]);
+  }, []);
 
   useEffect(() => {
     const spotLight = new DirectionalLight(0xFFFFFF);
-    const ambientLight = new HemisphereLight(0x000000, 0xffffff);
+    const ambientLight = new HemisphereLight(0x000000, 0xFFFFFF);
 
     spotLight.position.set(0, 200, 0);
     spotLight.castShadow = true;
@@ -253,51 +205,102 @@ const World = (props) => {
   }, []);
 
   useEffect(() => {
-    const animate = () => {
-      if (player.current && nav.current) {
-        oldPosition.current.copy(player.current.position);
+    if (!playerModelData || !mapModelData) return;
 
-        if (astronaut.current) {
-          const session = renderer.current.xr.getSession();
-          const cameraRef = session ? renderer.current.xr.getCamera(camera.current) : camera.current;
+    scene.current.add(playerModels.current);
+    scene.current.add(mapModels.current);
 
-          const diffX = cameraRef.position.x - astronaut.current.position.x;
-          const diffZ = cameraRef.position.z - astronaut.current.position.z;
+    const loadScene = async () => {
+      const loadedPlayers = await Promise.all(playerModelData);
+      await Promise.all(mapModelData);
 
-          astronaut.current.rotation.y = Math.atan2(diffX, diffZ);
+      loadedPlayers.forEach(model => {
+        if (model.mixer) {
+          animations.current.push(model.mixer);
         }
+      });
 
-        controls.current.update();
+      navMesh.current = scene.current.getObjectByName('nav-mesh');
 
-        const origin = player.current.position;
-        const direction = raycasterDirection.current.normalize();
-        raycaster.current.set(origin, direction);
+      const playerModel = scene.current.getObjectByName(username);
+      playerModel.visible = false;
 
-        const collisions = raycaster.current.intersectObject(nav.current);
-
-        const diffX = oldPosition.current.x - player.current.position.x;
-        const diffZ = oldPosition.current.z - player.current.position.z;
-
-        if ((diffX || diffZ) && mixer.current) {
-          const delta = clock.current.getDelta();
-          mixer.current.update(delta);
-        }
-
-        if (collisions.length === 0) {
-          player.current.position.x += diffX;
-          player.current.position.z += diffZ;
-        };
+      player.current = new Object3D();
+      player.current.position.set(...playerModel.position.toArray());
+      player.current.rotation.set(...playerModel.rotation.toArray());
+      player.current.name = 'player';
+      scene.current.add(player.current);
+      player.current.add(camera.current);
+      if (supportsVR) {
+        player.current.add(controllers.current);
       }
+
+      controls.current = new Controls(
+        player.current,
+        camera.current,
+        renderer.current,
+        PLAYER_SPEED,
+      );
+
+      setLoaded(true);
+    };
+
+    loadScene();
+  }, [playerModelData, mapModelData, username]);
+
+  useEffect(() => {
+    const updatePlayers = (delta) => {
+      players.forEach(({
+        username,
+        position,
+        rotation,
+        moving,
+      }, index) => {
+        const playerModel = scene.current.getObjectByName(username);
+
+        playerModel.position.x = position.x;
+        playerModel.position.y = position.y;
+        playerModel.position.z = position.z;
+
+        if (moving) animations.current[index].update(delta);
+      });
+    };
+
+    const animate = () => {
+      oldPosition.current.copy(player.current.position);
+
+      controls.current.update();
+
+      const origin = player.current.position;
+      const direction = raycasterDirection.current.normalize();
+      raycaster.current.set(origin, direction);
+
+      const collisions = raycaster.current.intersectObject(navMesh.current);
+      const diffX = oldPosition.current.x - player.current.position.x;
+      const diffZ = oldPosition.current.z - player.current.position.z;
+
+      if (collisions.length === 0) {
+        player.current.position.x += diffX;
+        player.current.position.z += diffZ;
+      };
+
+      const [playerModel] = players.filter(player => player.username === username);
+      playerModel.position = player.current.position;
+      playerModel.rotation = player.current.rotation;
+      playerModel.moving = diffX || diffZ;
+
+      const delta = clock.current.getDelta();
+      updatePlayers(delta);
 
       renderer.current.render(scene.current, camera.current);
     };
 
-    renderer.current.setAnimationLoop(animate);
+    if (loaded) renderer.current.setAnimationLoop(animate);
 
     return () => {
       renderer.current.setAnimationLoop(null);
     };
-  }, []);
+  }, [username, loaded]);
 
   return (
     <canvas
