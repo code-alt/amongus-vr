@@ -22,9 +22,8 @@ import { useAppContext } from 'hooks';
 import createHud from './createHud';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { database } from 'utils/firebase';
+import vr from 'utils/vr';
 import './index.css';
-
-const supportsVR = 'xr' in navigator;
 
 const World = ({ id, stage, ...rest }) => {
   const { username } = useAppContext();
@@ -60,7 +59,9 @@ const World = ({ id, stage, ...rest }) => {
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
     renderer.current.xr.setFramebufferScaleFactor(2.0);
-    if (supportsVR) document.body.appendChild(VRButton.createButton(renderer.current));
+    if ('xr' in navigator) document.body.appendChild(VRButton.createButton(renderer.current));
+
+    const isVR = vr(renderer.current);
 
     camera.current = new PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 500);
     camera.current.position.set(0, 1.6, 0);
@@ -71,7 +72,7 @@ const World = ({ id, stage, ...rest }) => {
     hudScene.current = new Scene();
     hudCamera.current = new OrthographicCamera(-innerWidth / 2, innerWidth / 2, innerHeight / 2, -innerHeight / 2, 0, 30);
 
-    if (supportsVR) {
+    if (isVR) {
       controllers.current = new VRControllers(renderer.current);
       scene.current.add(controllers.current);
     }
@@ -85,7 +86,7 @@ const World = ({ id, stage, ...rest }) => {
     scene.current.add(player.current);
     player.current.add(camera.current);
 
-    if (supportsVR) {
+    if (isVR) {
       player.current.add(controllers.current);
     }
 

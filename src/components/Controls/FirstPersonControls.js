@@ -21,7 +21,7 @@ var FirstPersonControls = function ( object, domElement ) {
 	this.enabled = true;
 
 	this.movementSpeed = 1.0;
-	this.lookSpeed = 0.005;
+	this.lookSpeed = 0.01;
 
 	this.lookVertical = true;
 	this.autoForward = false;
@@ -89,7 +89,11 @@ var FirstPersonControls = function ( object, domElement ) {
 
 	};
 
-	this.onMouseDown = function ( event ) {
+	this.onTouchStart = function ( event ) {
+
+		this.touch = true;
+
+		this.touching = true;
 
 		if ( this.domElement !== document ) {
 
@@ -102,13 +106,7 @@ var FirstPersonControls = function ( object, domElement ) {
 
 		if ( this.activeLook ) {
 
-			switch ( event.button ) {
-
-				case 0: this.moveForward = true; break;
-				case 2: this.moveBackward = true; break;
-				default: break;
-
-			}
+			this.moveForward = true;
 
 		}
 
@@ -116,20 +114,18 @@ var FirstPersonControls = function ( object, domElement ) {
 
 	};
 
-	this.onMouseUp = function ( event ) {
+	this.onTouchUp = function ( event ) {
+
+		this.touch = true;
+
+		this.touching = false;
 
 		event.preventDefault();
 		event.stopPropagation();
 
 		if ( this.activeLook ) {
 
-			switch ( event.button ) {
-
-				case 0: this.moveForward = false; break;
-				case 2: this.moveBackward = false; break;
-				default: break;
-
-			}
+			this.moveForward = false;
 
 		}
 
@@ -138,6 +134,8 @@ var FirstPersonControls = function ( object, domElement ) {
 	};
 
 	this.onMouseMove = function ( event ) {
+
+		this.touch = false
 
 		if ( this.domElement === document ) {
 
@@ -148,6 +146,26 @@ var FirstPersonControls = function ( object, domElement ) {
 
 			this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
 			this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+
+		}
+
+	};
+
+	this.onTouchMove = function ( event ) {
+
+		this.touch = true;
+
+		const touch = event.changedTouches[ 0 ]
+
+		if ( this.domElement === document ) {
+
+			this.mouseX = touch.pageX - this.viewHalfX;
+			this.mouseY = touch.pageY - this.viewHalfY;
+
+		} else {
+
+			this.mouseX = touch.pageX - this.domElement.offsetLeft - this.viewHalfX;
+			this.mouseY = touch.pageY - this.domElement.offsetTop - this.viewHalfY;
 
 		}
 
@@ -265,8 +283,9 @@ var FirstPersonControls = function ( object, domElement ) {
 
 			}
 
-			lon -= this.mouseX * actualLookSpeed;
-			if ( this.lookVertical ) lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
+			if ( !this.touch || this.touching ) lon -= this.mouseX * actualLookSpeed;
+
+			if ( this.lookVertical && (this.touching || !this.touch) ) lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
 
 			lat = Math.max( - 85, Math.min( 85, lat ) );
 
@@ -298,9 +317,10 @@ var FirstPersonControls = function ( object, domElement ) {
 	this.dispose = function () {
 
 		this.domElement.removeEventListener( 'contextmenu', contextmenu, false );
-		this.domElement.removeEventListener( 'mousedown', _onMouseDown, false );
+		this.domElement.removeEventListener( 'touchstart', _onTouchStart, false );
 		this.domElement.removeEventListener( 'mousemove', _onMouseMove, false );
-		this.domElement.removeEventListener( 'mouseup', _onMouseUp, false );
+		this.domElement.removeEventListener( 'touchmove', _onTouchMove, false );
+		this.domElement.removeEventListener( 'touchend', _onTouchUp, false );
 
 		window.removeEventListener( 'keydown', _onKeyDown, false );
 		window.removeEventListener( 'keyup', _onKeyUp, false );
@@ -308,15 +328,17 @@ var FirstPersonControls = function ( object, domElement ) {
 	};
 
 	var _onMouseMove = bind( this, this.onMouseMove );
-	var _onMouseDown = bind( this, this.onMouseDown );
-	var _onMouseUp = bind( this, this.onMouseUp );
+	var _onTouchStart = bind( this, this.onTouchStart );
+	var _onTouchMove = bind( this, this.onTouchMove )
+	var _onTouchUp = bind( this, this.onTouchUp );
 	var _onKeyDown = bind( this, this.onKeyDown );
 	var _onKeyUp = bind( this, this.onKeyUp );
 
 	this.domElement.addEventListener( 'contextmenu', contextmenu, false );
 	this.domElement.addEventListener( 'mousemove', _onMouseMove, false );
-	this.domElement.addEventListener( 'mousedown', _onMouseDown, false );
-	this.domElement.addEventListener( 'mouseup', _onMouseUp, false );
+	this.domElement.addEventListener( 'touchmove', _onTouchMove, false );
+	this.domElement.addEventListener( 'touchstart', _onTouchStart, false );
+	this.domElement.addEventListener( 'touchend', _onTouchUp, false );
 
 	window.addEventListener( 'keydown', _onKeyDown, false );
 	window.addEventListener( 'keyup', _onKeyUp, false );

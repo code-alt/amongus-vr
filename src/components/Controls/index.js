@@ -1,11 +1,12 @@
 import FPSControls from './FPSControls';
 import VRControls from './VRControls';
+import vr from 'utils/vr';
 
 class Controls {
   constructor(target, camera, renderer, speed) {
-    const supportsVR = 'xr' in navigator;
+    const isVR = vr(renderer);
 
-    this.controls = supportsVR
+    this.controls = isVR
       ? new VRControls(target, camera, renderer, speed)
       : new FPSControls(target, renderer, speed);
   }
