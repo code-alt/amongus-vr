@@ -8,6 +8,7 @@ import {
   PerspectiveCamera,
   Scene,
   Fog,
+  OrthographicCamera,
   DirectionalLight,
   HemisphereLight,
   Object3D,
@@ -20,27 +21,29 @@ import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
 import createPlayers from './createPlayers';
 import createMap from './createMap';
+import createHud from './createHud';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { database } from 'utils/firebase';
 import './index.css';
 
 const supportsVR = 'xr' in navigator;
 
-const PLAYER_SPEED = 1;
-const PLAYER_VISION = 1;
-
 const World = ({ id, map, ...rest }) => {
   const { username } = useAppContext();
   const [loaded, setLoaded] = useState(false);
   const [mapModelData, setMapModelData] = useState();
+  const playerSpeed = useRef(1);
   const mapModels = useRef();
   const playerModels = useRef([]);
   const players = useRef([]);
   const canvasRef = useRef();
   const renderer = useRef();
   const camera = useRef();
+  const hudCamera = useRef();
   const controls = useRef();
   const scene = useRef();
+  const hudScene = useRef();
+  const hud = useRef();
   const lights = useRef();
   const controllers = useRef();
   const navMesh = useRef();
@@ -59,6 +62,7 @@ const World = ({ id, map, ...rest }) => {
     });
     renderer.current.setSize(innerWidth, innerHeight);
     renderer.current.setPixelRatio(2);
+    renderer.current.autoClear = false;
     renderer.current.outputEncoding = sRGBEncoding;
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
@@ -69,7 +73,10 @@ const World = ({ id, map, ...rest }) => {
     camera.current.position.set(0, 1.6, 0);
 
     scene.current = new Scene();
-    scene.current.fog = new Fog(0x000000, 1, 30 * PLAYER_VISION);
+    scene.current.fog = new Fog(0x000000, 1, 30);
+
+    hudScene.current = new Scene();
+    hudCamera.current = new OrthographicCamera(-innerWidth / 2, innerWidth / 2, innerHeight / 2, -innerHeight / 2, 0, 30);
 
     if (supportsVR) {
       controllers.current = new VRControllers(renderer.current);
@@ -84,6 +91,7 @@ const World = ({ id, map, ...rest }) => {
 
     return () => {
       cleanScene(scene.current);
+      cleanScene(hudScene.current);
       cleanRenderer(renderer.current);
     };
   }, [map]);
@@ -116,6 +124,8 @@ const World = ({ id, map, ...rest }) => {
       renderer.current.setSize(windowWidth, canvasHeight);
       camera.current.aspect = windowWidth / canvasHeight;
       camera.current.updateProjectionMatrix();
+      hudCamera.current.aspect = windowWidth / canvasHeight;
+      hudCamera.current.updateProjectionMatrix();
     };
 
     window.addEventListener('resize', handleResize);
@@ -192,6 +202,50 @@ const World = ({ id, map, ...rest }) => {
   }, [id, username]);
 
   useEffect(() => {
+    const ref = database.ref(`lobbies/${id}`);
+
+    const updateHud = snap => {
+      const data = snap.val();
+      if (!data) return;
+
+      if (player.current) {
+        player.current.speed = data.playerSpeed;
+        controls.current = new Controls(
+          player.current,
+          camera.current,
+          renderer.current,
+        );
+      }
+
+      if (hud.current) {
+        hudScene.current.remove(hud.current);
+      }
+
+      return createHud({ text: data });
+    };
+
+    const handleHudChange = (snap) => {
+      const data = snap.val();
+      if (!data) return;
+
+      ref.child('settings').once('value', updateHud);
+    };
+
+    const isLobby = map === 'lobby';
+
+    if (isLobby) {
+      ref.child('settings').once('value', updateHud);
+      ref.child('settings').on('child_changed', handleHudChange);
+    }
+
+    return () => {
+      if (isLobby) {
+        ref.child('settings').off('child_changed', handleHudChange);
+      }
+    };
+  }, [id, username, map]);
+
+  useEffect(() => {
     if (!mapModelData) return;
 
     scene.current.add(mapModels.current);
@@ -203,6 +257,7 @@ const World = ({ id, map, ...rest }) => {
 
       player.current = new Object3D();
       player.current.name = 'player';
+      player.current.speed = playerSpeed.current;
       scene.current.add(player.current);
       player.current.add(camera.current);
       if (supportsVR) {
@@ -213,7 +268,6 @@ const World = ({ id, map, ...rest }) => {
         player.current,
         camera.current,
         renderer.current,
-        PLAYER_SPEED,
       );
 
       const position = new Vector3(0, 0, 4);
@@ -271,6 +325,7 @@ const World = ({ id, map, ...rest }) => {
       });
 
       renderer.current.render(scene.current, camera.current);
+      renderer.current.render(hudScene.current, hudCamera.current);
     };
 
     if (loaded) renderer.current.setAnimationLoop(animate);

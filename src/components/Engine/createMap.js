@@ -35,7 +35,9 @@ function createMap(mapData, parent) {
       }
     });
 
-    model.scene.scale.set(0.5, 0.5, 0.5);
+    if (name === 'lobby') {
+      model.scene.scale.set(0.5, 0.5, 0.5);
+    }
 
     parent.add(model.scene);
 

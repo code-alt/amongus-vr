@@ -29,12 +29,12 @@ import impostorIcon from 'assets/impostor-icon.png';
 import playersIcon from 'assets/players-icon.png';
 import './index.css';
 
-function filterLobbies(lobbies, filters) {
-  const [mapFilter, impostorsFilter] = filters;
+const maps = ['The Skeld', 'Mira HQ', 'Polus'];
 
-  return lobbies.filter(({ map, impostors }) =>
-    mapFilter === map &&
-    impostorsFilter === 'Any' ? true : impostorsFilter === impostors
+function filterLobbies(lobbies, mapFilter, impostorsFilter) {
+  return lobbies.filter(({ settings }) =>
+    mapFilter === maps.indexOf(settings.map) &&
+    impostorsFilter === 'Any' ? true : impostorsFilter === settings.impostors
   );
 }
 
@@ -56,16 +56,32 @@ const Menu = () => {
   const recommendedPlayers = [null, 4, 7, 9];
 
   const createLobby = () => {
-    if (lobbies.filter(lobby => lobby.host === username)[0]) return;
+    if (!username || lobbies.filter(lobby => lobby.host === username)[0]) return;
 
     const id = genCode();
 
     const lobbyData = {
       id,
       host: username,
-      map,
-      impostors,
-      maxPlayers,
+      settings: {
+        map: maps[map],
+        impostors,
+        maxPlayers,
+        confirmEjects: true,
+        emergencyMeetings: 1,
+        emergencyCooldown: 0,
+        discussionTime: 15,
+        votingtime: 120,
+        playerSpeed: 1,
+        crewmateVision: 1,
+        impostorVision: 1.5,
+        killCooldown: 45,
+        killDistance: 'normal',
+        visualTasks: true,
+        commonTasks: 1,
+        longTasks: 1,
+        shortTasks: 2
+      },
     };
 
     database.ref(`/lobbies/${id}`).set(lobbyData);
@@ -383,10 +399,10 @@ const Menu = () => {
             </div>
             <div className="menu__lobby">
               <div className="menu__lobby-list">
-                {filterLobbies(lobbies, [mapFilter, impostorsFilter]).length === 0 &&
+                {filterLobbies(lobbies, mapFilter, impostorsFilter).length === 0 &&
                   <label className="menu__lobby-item-text">There aren't any active lobbies.</label>
                 }
-                {filterLobbies(lobbies, [mapFilter, impostorsFilter]).map(({ id, host, map, impostors, players, maxPlayers }) => (
+                {filterLobbies(lobbies, mapFilter, impostorsFilter).map(({ id, host, settings, players }) => (
                   <Link className="menu__lobby-item"
                     key={id}
                     onMouseEnter={toggleSelect}
@@ -396,14 +412,14 @@ const Menu = () => {
                     <div className="menu__lobby-item-property">
                       <img
                         className="menu__lobby-item-icon"
-                        src={[skeldIcon, miraIcon, polusIcon][map]}
+                        src={[skeldIcon, miraIcon, polusIcon][maps.indexOf(settings.map)]}
                         alt="Map"
                       />
                       <label className="menu__lobby-item-text">{host}</label>
                     </div>
                     <div className="menu__lobby-item-properties">
                       <div className="menu__lobby-item-property">
-                        <label className="menu__lobby-item-text" style={{ color: '#DD2200' }}>{impostors}</label>
+                        <label className="menu__lobby-item-text" style={{ color: '#DD2200' }}>{settings.impostors}</label>
                         <img
                           className="menu__lobby-item-icon"
                           src={impostorIcon}
@@ -411,7 +427,7 @@ const Menu = () => {
                         />
                       </div>
                       <div className="menu__lobby-item-property">
-                        <label className="menu__lobby-item-text">{Object.values(players || []).length}/{maxPlayers}</label>
+                        <label className="menu__lobby-item-text">{Object.values(players || []).length}/{settings.maxPlayers}</label>
                         <img
                           className="menu__lobby-item-icon"
                           src={playersIcon}

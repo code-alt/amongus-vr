@@ -1,11 +1,10 @@
 import { Vector3 } from 'three';
 
 class VRControls {
-  constructor(target, camera, renderer, speed) {
+  constructor(target, camera, renderer) {
     this.target = target;
     this.camera = camera;
     this.renderer = renderer;
-    this.speed = speed;
     this.cameraVector = new Vector3();
     this.prevGamePads = new Map();
   }
@@ -41,7 +40,7 @@ class VRControls {
           };
 
           if (old) {
-            const movementSpeed = this.speed * 0.1;
+            const movementSpeed = this.target.speed * 0.1;
 
             data.axes.forEach((value, i) => {
               if (i === 2) {
