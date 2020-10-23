@@ -221,7 +221,8 @@ const World = ({ id, map, ...rest }) => {
         hudScene.current.remove(hud.current);
       }
 
-      return createHud({ text: data });
+      hud.current = createHud({ data });
+      hudScene.current.add(hud.current);
     };
 
     const handleHudChange = (snap) => {

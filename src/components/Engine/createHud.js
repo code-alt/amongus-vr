@@ -23,7 +23,7 @@ function createHudText(settings) {
   return hudText;
 }
 
-function createTextTexture(text, width, height) {
+function createTextTexture(data, width, height) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -32,7 +32,7 @@ function createTextTexture(text, width, height) {
   context.fillStyle = '#FFFFFF';
   context.textAlign = 'start';
   context.font = '24px Arial';
-  createHudText(text).forEach((line, index) => {
+  createHudText(data).forEach((line, index) => {
     context.fillText(line, 16, 40 + (index * 28.8));
   });
 
@@ -43,12 +43,12 @@ function createTextTexture(text, width, height) {
 }
 
 function createHud({
-  text,
+  data,
   image,
   width = window.innerWidth,
   height = window.innerHeight,
 }) {
-  const texture = image ? image : createTextTexture(text, width, height);
+  const texture = image ? image : createTextTexture(data, width, height);
 
   const hudMaterial = new MeshBasicMaterial({
     map: texture,
