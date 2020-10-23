@@ -56,7 +56,7 @@ const Menu = () => {
   const recommendedPlayers = [null, 4, 7, 9];
 
   const createLobby = () => {
-    if (lobbies.filter(lobby => lobby.host === username));
+    if (lobbies.filter(lobby => lobby.host === username)[0]) return;
 
     const id = genCode();
 
@@ -67,9 +67,16 @@ const Menu = () => {
       impostors,
       maxPlayers,
     };
-    console.log(lobbyData);
 
     database.ref(`/lobbies/${id}`).set(lobbyData);
+    database.ref(`/lobbies`).on('value', snap => {
+      const data = snap.val();
+      if (!data) return;
+
+      setLobbies(Object.values(data));
+    });
+
+    return history.push(`/lobby/${id}`);
   };
 
   useEffect(() => {

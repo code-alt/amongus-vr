@@ -110,14 +110,22 @@
 @media (max-width: 1024px) {
   .menu__item-button {
     margin: 12px 0 0;
+    width: 100%!important;
   }
 }
 
 .menu__item-input {
   align-items: center;
-  display: flex;
+  display: grid;
   flex-direction: row;
   gap: 24px;
+  grid-template-columns: auto auto;
+}
+
+@media (max-width: 1024px) {
+  .menu__item-input {
+    grid-template-columns: 1fr auto;
+  }
 }
 
 .menu__item-input svg:hover {
