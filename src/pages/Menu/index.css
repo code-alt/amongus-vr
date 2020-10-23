@@ -27,6 +27,7 @@
 }
 
 .menu__logo {
+  height: auto;
   margin-bottom: 20vh;
   width: 60%;
 }
