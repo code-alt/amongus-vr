@@ -228,7 +228,7 @@ const World = ({ id, stage, ...rest }) => {
       ref.child('settings').once('value', updateHud);
     };
 
-    const isLobby = map === 'lobby';
+    const isLobby = stage === 'lobby';
 
     if (isLobby) {
       ref.child('settings').once('value', updateHud);
@@ -240,7 +240,7 @@ const World = ({ id, stage, ...rest }) => {
         ref.child('settings').off('child_changed', handleHudChange);
       }
     };
-  }, [id, username, map]);
+  }, [id, username, stage]);
 
   useEffect(() => {
     const animate = () => {
@@ -265,6 +265,7 @@ const World = ({ id, stage, ...rest }) => {
 
       const ref = database.ref(`lobbies/${id}`);
       ref.child(`players/${username}`).update({
+        username,
         position: {
           x: player.current.position.x,
           y: player.current.position.y,

@@ -156,8 +156,6 @@ class Player {
       this.mesh.position.set(...positionVector.toArray());
       this.position = position;
 
-      console.log(position, this.position);
-
       const delta = this.clock.getDelta();
       this.mixer.update(delta);
     } else if (this.mixer.time !== 0.15) {
