@@ -22,7 +22,7 @@ function createPlayers(playerData, parent) {
   const modelLoader = new GLTFLoader();
   modelLoader.setDRACOLoader(dracoLoader);
 
-  const playerConfigPromises = playerData.map(async ({
+  const playerConfigPromises = [playerData].map(async ({
     color,
     username,
     position,

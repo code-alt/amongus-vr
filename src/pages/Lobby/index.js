@@ -23,7 +23,7 @@ const Lobby = () => {
       </Helmet>
       {!prerender &&
         <Suspense fallback={null}>
-          <World />
+          <World id={id} />
         </Suspense>
       }
     </Fragment>

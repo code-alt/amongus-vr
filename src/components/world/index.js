@@ -21,68 +21,10 @@ import { useAppContext } from 'hooks';
 import createPlayers from './createPlayers';
 import createMap from './createMap';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
+import { database } from 'utils/firebase';
 import './index.css';
 
 const supportsVR = 'xr' in navigator;
-
-const players = [
-  {
-    color: 'red',
-    username: 'Red',
-    position: {
-      x: 0,
-      y: 0,
-      z: 4,
-    },
-    rotation: {
-      x: 0,
-      y: Math.PI,
-      z: 0,
-    },
-  },
-  {
-    color: 'blue',
-    username: 'Blue',
-    position: {
-      x: 0,
-      y: 0,
-      z: -4,
-    },
-    rotation: {
-      x: 0,
-      y: -Math.PI,
-      z: 0,
-    },
-  },
-  {
-    color: 'green',
-    username: 'Green',
-    position: {
-      x: -4,
-      y: 0,
-      z: 0,
-    },
-    rotation: {
-      x: 0,
-      y: Math.PI / -2,
-      z: 0,
-    },
-  },
-  {
-    color: 'yellow',
-    username: 'Yellow',
-    position: {
-      x: 4,
-      y: 0,
-      z: 0,
-    },
-    rotation: {
-      x: 0,
-      y: Math.PI / 2,
-      z: 0,
-    },
-  },
-];
 
 const map = [{
   name: 'skeld',
@@ -101,14 +43,13 @@ const map = [{
 const PLAYER_SPEED = 1;
 const PLAYER_VISION = 1;
 
-const World = (props) => {
+const World = ({ id, ...rest }) => {
   const { username } = useAppContext();
   const [loaded, setLoaded] = useState(false);
-  const [playerModelData, setPlayerModelData] = useState();
   const [mapModelData, setMapModelData] = useState();
-  const playerModels = useRef();
   const mapModels = useRef();
-  const animations = useRef([]);
+  const playerModels = useRef([]);
+  const players = useRef([]);
   const canvasRef = useRef();
   const renderer = useRef();
   const camera = useRef();
@@ -149,12 +90,7 @@ const World = (props) => {
       scene.current.add(controllers.current);
     }
 
-    playerModels.current = new Group();
     mapModels.current = new Group();
-
-    const playerConfigPromises = createPlayers(players, playerModels.current);
-
-    setPlayerModelData(playerConfigPromises);
 
     const mapConfigPromises = createMap(map, mapModels.current);
 
@@ -205,29 +141,81 @@ const World = (props) => {
   }, []);
 
   useEffect(() => {
-    if (!playerModelData || !mapModelData) return;
+    const loadPlayer = async (playerData) => {
+      const playerConfigPromise = createPlayers(playerData, scene.current);
 
-    scene.current.add(playerModels.current);
+      const loadedPlayer = await Promise.resolve(playerConfigPromise);
+      playerModels.current[loadedPlayer.username] = loadedPlayer;
+
+      if (loadedPlayer.username === username) loadedPlayer.visible = false;
+
+      return loadedPlayer;
+    };
+
+    const updatePlayer = (snap) => {
+      const data = snap.val();
+
+      if (data) {
+        const { username, position, rotation, moving } = data;
+        const playerModel = scene.current.getObjectByName(username);
+
+        if (playerModel) {
+          playerModel.position.x = position.x;
+          playerModel.position.y = position.y;
+          playerModel.position.z = position.z;
+
+          playerModel.rotation.y = rotation.y;
+
+          const delta = clock.current.getDelta();
+          if (moving) playerModel.mixer.update(delta);
+        }
+      }
+    };
+
+    const ref = database.ref(`/lobbies/${id}`);
+
+    ref.child('players').on('child_added', snap => {
+      const data = snap.val();
+
+      if (data) {
+        if (data.username !== username) {
+          if (!players.current[username]) {
+            loadPlayer(data);
+            ref.child(`players/${data.username}`).on('value', updatePlayer);
+          }
+        }
+      }
+    });
+
+    ref.child('players').on('child_removed', snap => {
+      const data = snap.val();
+
+      if (data) {
+        ref.child(`players/${data.username}`).off('value', updatePlayer);
+        scene.current.remove(scene.current.getObjectByName(data.username));
+
+        const playerEntry = players.current.filter(player => player.username === username);
+        const playerIndex = players.current.indexOf(playerEntry);
+        players.current.slice(playerIndex, 1);
+      }
+    });
+
+    return () => {
+      ref.child(`players/${username}`).remove();
+    };
+  }, [id, username]);
+
+  useEffect(() => {
+    if (!mapModelData) return;
+
     scene.current.add(mapModels.current);
 
     const loadScene = async () => {
-      const loadedPlayers = await Promise.all(playerModelData);
       await Promise.all(mapModelData);
-
-      loadedPlayers.forEach(model => {
-        if (model.mixer) {
-          animations.current.push(model.mixer);
-        }
-      });
 
       navMesh.current = scene.current.getObjectByName('nav-mesh');
 
-      const playerModel = scene.current.getObjectByName(username);
-      playerModel.visible = false;
-
       player.current = new Object3D();
-      player.current.position.set(...playerModel.position.toArray());
-      player.current.rotation.set(...playerModel.rotation.toArray());
       player.current.name = 'player';
       scene.current.add(player.current);
       player.current.add(camera.current);
@@ -242,30 +230,28 @@ const World = (props) => {
         PLAYER_SPEED,
       );
 
+      const position = new Vector3(0, 0, 4);
+      const rotation = new Vector3(0, Math.PI, 0);
+
+      const ref = database.ref(`/lobbies/${id}`);
+      ref.child(`players/${username}`).set({
+        color: 'red',
+        username,
+        moving: false,
+        position,
+        rotation,
+      });
+
+      player.current.position.set(...position.toArray());
+      player.current.rotation.set(...rotation.toArray());
+
       setLoaded(true);
     };
 
     loadScene();
-  }, [playerModelData, mapModelData, username]);
+  }, [mapModelData, username, id]);
 
   useEffect(() => {
-    const updatePlayers = (delta) => {
-      players.forEach(({
-        username,
-        position,
-        rotation,
-        moving,
-      }, index) => {
-        const playerModel = scene.current.getObjectByName(username);
-
-        playerModel.position.x = position.x;
-        playerModel.position.y = position.y;
-        playerModel.position.z = position.z;
-
-        if (moving) animations.current[index].update(delta);
-      });
-    };
-
     const animate = () => {
       oldPosition.current.copy(player.current.position);
 
@@ -284,13 +270,18 @@ const World = (props) => {
         player.current.position.z += diffZ;
       };
 
-      const [playerModel] = players.filter(player => player.username === username);
-      playerModel.position = player.current.position;
-      playerModel.rotation = player.current.rotation;
-      playerModel.moving = diffX || diffZ;
-
-      const delta = clock.current.getDelta();
-      updatePlayers(delta);
+      const ref = database.ref(`/lobbies/${id}`);
+      ref.child(`players/${username}`).update({
+        position: {
+          x: player.current.position.x,
+          y: player.current.position.y,
+          z: player.current.position.z,
+        },
+        rotation: {
+          y: player.current.rotation.y,
+        },
+        moving: Boolean(diffX || diffZ),
+      });
 
       renderer.current.render(scene.current, camera.current);
     };
@@ -300,14 +291,14 @@ const World = (props) => {
     return () => {
       renderer.current.setAnimationLoop(null);
     };
-  }, [username, loaded]);
+  }, [username, id, loaded]);
 
   return (
     <canvas
       aria-hidden
       className="world"
       ref={canvasRef}
-      {...props}
+      {...rest}
     />
   );
 };
