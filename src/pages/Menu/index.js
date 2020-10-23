@@ -9,6 +9,8 @@ import Button from 'components/Button';
 import Input from 'components/Input';
 import { useAppContext, useFormInput, useAudio } from 'hooks';
 import prerender from 'utils/prerender';
+import { database } from 'utils/firebase';
+import { genCode } from 'utils/code';
 import select from 'assets/sounds/select.mp3';
 import click from 'assets/sounds/click.mp3';
 import hostIcon from 'assets/host.png';
@@ -27,17 +29,9 @@ import impostorIcon from 'assets/impostor-icon.png';
 import playersIcon from 'assets/players-icon.png';
 import './index.css';
 
-const lobbies = [
-  {
-    id: 'REDSUS',
-    map: 0,
-    impostors: 1,
-    players: 9,
-    maxPlayers: 10,
-  }
-];
+function filterLobbies(lobbies, filters) {
+  const [mapFilter, impostorsFilter] = filters;
 
-function filterLobbies(mapFilter, impostorsFilter) {
   return lobbies.filter(({ map, impostors }) =>
     mapFilter === map &&
     impostorsFilter === 'Any' ? true : impostorsFilter === impostors
@@ -53,19 +47,46 @@ const Menu = () => {
   const [, toggleClick] = useAudio(click);
   const usernameInput = useFormInput(username);
   const codeInput = useFormInput('');
+  const [lobbies, setLobbies] = useState([]);
   const [map, setMap] = useState(0);
   const [impostors, setImpostors] = useState(1);
   const [maxPlayers, setMaxPlayers] = useState(9);
   const [mapFilter, setMapFilter] = useState(0);
-  const [impostorsFilter, setImpostorsFilter] = useState(1);
+  const [impostorsFilter, setImpostorsFilter] = useState('Any');
   const recommendedPlayers = [null, 4, 7, 9];
+
+  const createLobby = () => {
+    if (lobbies.filter(lobby => lobby.host === username));
+
+    const id = genCode();
+
+    const lobbyData = {
+      id,
+      host: username,
+      map,
+      impostors,
+      maxPlayers,
+    };
+    console.log(lobbyData);
+
+    database.ref(`/lobbies/${id}`).set(lobbyData);
+  };
+
+  useEffect(() => {
+    database.ref(`/lobbies`).on('value', snap => {
+      const data = snap.val();
+      if (!data) return;
+
+      setLobbies(Object.values(data));
+    });
+  }, []);
 
   const onSubmit = useCallback(event => {
     event.preventDefault();
     if (lobbies.filter(({ id }) => id === codeInput.value).length === 0) return;
 
     return history.push(`/lobby/${codeInput.value}`);
-  }, [codeInput.value, history]);
+  }, [lobbies, codeInput.value, history]);
 
   useEffect(() => {
     async function fetchVersion() {
@@ -192,6 +213,7 @@ const Menu = () => {
                   <ChevronRight
                     onMouseEnter={toggleSelect}
                     onMouseDown={toggleClick}
+                    onClick={onSubmit}
                   />
                 </form>
               </div>
@@ -292,6 +314,7 @@ const Menu = () => {
           <Button
             className="menu__nav-button"
             style={{ right: '12px', left: 'unset' }}
+            onClick={createLobby}
           >
             Confirm
           </Button>
@@ -353,10 +376,10 @@ const Menu = () => {
             </div>
             <div className="menu__lobby">
               <div className="menu__lobby-list">
-                {filterLobbies(mapFilter, impostorsFilter).length === 0 &&
+                {filterLobbies(lobbies, [mapFilter, impostorsFilter]).length === 0 &&
                   <label className="menu__lobby-item-text">There aren't any active lobbies.</label>
                 }
-                {filterLobbies(mapFilter, impostorsFilter).map(({ id, map, impostors, players, maxPlayers }) => (
+                {filterLobbies(lobbies, [mapFilter, impostorsFilter]).map(({ id, host, map, impostors, players, maxPlayers }) => (
                   <Link className="menu__lobby-item"
                     key={id}
                     onMouseEnter={toggleSelect}
@@ -369,7 +392,7 @@ const Menu = () => {
                         src={[skeldIcon, miraIcon, polusIcon][map]}
                         alt="Map"
                       />
-                      <label className="menu__lobby-item-text">Red</label>
+                      <label className="menu__lobby-item-text">{host}</label>
                     </div>
                     <div className="menu__lobby-item-properties">
                       <div className="menu__lobby-item-property">
@@ -381,7 +404,7 @@ const Menu = () => {
                         />
                       </div>
                       <div className="menu__lobby-item-property">
-                        <label className="menu__lobby-item-text">{players}/{maxPlayers}</label>
+                        <label className="menu__lobby-item-text">{Object.values(players || []).length}/{maxPlayers}</label>
                         <img
                           className="menu__lobby-item-icon"
                           src={playersIcon}

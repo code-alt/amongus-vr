@@ -158,7 +158,7 @@ const World = ({ id, map, ...rest }) => {
       }
     };
 
-    const ref = database.ref(`/lobbies/${id}`);
+    const ref = database.ref(`lobbies/${id}`);
 
     ref.child('players').on('child_added', snap => {
       const data = snap.val();
@@ -257,7 +257,7 @@ const World = ({ id, map, ...rest }) => {
         player.current.position.z += diffZ;
       };
 
-      const ref = database.ref(`/lobbies/${id}`);
+      const ref = database.ref(`lobbies/${id}`);
       ref.child(`players/${username}`).update({
         position: {
           x: player.current.position.x,
