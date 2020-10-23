@@ -1,16 +1,18 @@
 import React, { lazy, Fragment, Suspense } from 'react';
 import { Redirect, useRouteMatch } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAppContext } from 'hooks';
 import prerender from 'utils/prerender';
 import skeld from 'assets/models/skeld.glb';
 import astronaut from 'assets/models/astronaut.glb';
 
-const World = lazy(() => import('components/World'));
+const Engine = lazy(() => import('components/Engine'));
 
 const Game = () => {
+  const { username } = useAppContext();
   const match = useRouteMatch();
   const { id } = match.params;
-  if (!id) return <Redirect to="/" />;
+  if (!username || !id) return <Redirect to="/" />;
 
   return (
     <Fragment>
@@ -21,7 +23,7 @@ const Game = () => {
       </Helmet>
       {!prerender &&
         <Suspense fallback={null}>
-          <World />
+          <Engine id={id} map="skeld" />
         </Suspense>
       }
     </Fragment>

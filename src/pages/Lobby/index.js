@@ -3,10 +3,10 @@ import { Redirect, useRouteMatch } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAppContext } from 'hooks';
 import prerender from 'utils/prerender';
-import skeld from 'assets/models/skeld.glb';
+import lobby from 'assets/models/lobby.glb';
 import astronaut from 'assets/models/astronaut.glb';
 
-const World = lazy(() => import('components/World'));
+const Engine = lazy(() => import('components/Engine'));
 
 const Lobby = () => {
   const { username } = useAppContext();
@@ -18,12 +18,12 @@ const Lobby = () => {
     <Fragment>
       <Helmet>
         <title>Among Us - VR | Lobby {id}</title>
-        <link rel="prefetch" href={skeld} as="fetch" crossorigin="" />
+        <link rel="prefetch" href={lobby} as="fetch" crossorigin="" />
         <link rel="prefetch" href={astronaut} as="fetch" crossorigin="" />
       </Helmet>
       {!prerender &&
         <Suspense fallback={null}>
-          <World id={id} />
+          <Engine id={id} map="lobby" />
         </Suspense>
       }
     </Fragment>
