@@ -23,7 +23,7 @@ const Game = () => {
       </Helmet>
       {!prerender &&
         <Suspense fallback={null}>
-          <Engine id={id} map="skeld" />
+          <Engine id={id} stage="skeld" />
         </Suspense>
       }
     </Fragment>

@@ -23,7 +23,7 @@ const Lobby = () => {
       </Helmet>
       {!prerender &&
         <Suspense fallback={null}>
-          <Engine id={id} map="lobby" />
+          <Engine id={id} stage="lobby" />
         </Suspense>
       }
     </Fragment>
