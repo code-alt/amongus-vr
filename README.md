@@ -3,3 +3,23 @@
 A VR-ready recreation of the indie game: Among Us.
 
 [![Game preview](/public/social-image.png)](https://amongus.codyb.co)
+
+## Install & run
+
+Make sure you have nodejs and yarn installed. Install dependencies with:
+
+```bash
+yarn
+```
+
+Once it's done start up the server with:
+
+```bash
+yarn start
+```
+
+To run tests:
+
+```bash
+yarn test
+```
