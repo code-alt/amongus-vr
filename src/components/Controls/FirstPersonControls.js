@@ -46,8 +46,6 @@ class FirstPersonControls {
     this.moveLeft = false;
     this.moveRight = false;
 
-    this.mouseDragOn = false;
-
     this.viewHalfX = 0;
     this.viewHalfY = 0;
 
@@ -57,8 +55,6 @@ class FirstPersonControls {
 
     this._contextMenu = this.contextMenu.bind(this);
     this._onMouseMove = this.onMouseMove.bind(this);
-    this._onMouseDown = this.onMouseDown.bind(this);
-    this._onMouseUp = this.onMouseUp.bind(this);
     this._onKeyDown = this.onKeyDown.bind(this);
     this._onKeyUp = this.onKeyUp.bind(this);
 
@@ -85,54 +81,9 @@ class FirstPersonControls {
   bindEvents() {
     this.domElement.addEventListener('contextmenu', this._contextmenu, false);
     this.domElement.addEventListener('mousemove', this._onMouseMove, false);
-    this.domElement.addEventListener('mousedown', this._onMouseDown, false);
-    this.domElement.addEventListener('mouseup', this._onMouseUp, false);
 
     window.addEventListener('keydown', this._onKeyDown, false);
     window.addEventListener('keyup', this._onKeyUp, false);
-  }
-
-  /**
-   * OnMouseDown function
-   * @param  {object} event Event
-   */
-  onMouseDown(event) {
-    if (this.domElement !== document) {
-      this.domElement.focus();
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (this.activeLook) {
-      switch (event.button) {
-        case 0: this.moveForward = true; break;
-        case 2: this.moveBackward = true; break;
-      }
-    }
-
-    this.mouseDragOn = true;
-  }
-
-  /**
-   * OnMouseUp function
-   * @param  {object} event Event
-   */
-  onMouseUp(event) {
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (this.activeLook) {
-
-      switch (event.button) {
-
-        case 0: this.moveForward = false; break;
-        case 2: this.moveBackward = false; break;
-      }
-    }
-
-    this.mouseDragOn = false;
   }
 
   /**
@@ -167,8 +118,7 @@ class FirstPersonControls {
       case 39: /*right*/
       case 68: /*D*/ this.moveRight = true; break;
 
-      case 82: /*R*/ this.moveUp = true; break;
-      case 70: /*F*/ this.moveDown = true; break;
+      default: break;
     }
   }
 
@@ -190,8 +140,7 @@ class FirstPersonControls {
       case 39: /*right*/
       case 68: /*D*/ this.moveRight = false; break;
 
-      case 82: /*R*/ this.moveUp = false; break;
-      case 70: /*F*/ this.moveDown = false; break;
+      default: break;
     }
   }
 
@@ -218,9 +167,6 @@ class FirstPersonControls {
 
     if (this.moveLeft) this.object.translateX(-actualMoveSpeed);
     if (this.moveRight) this.object.translateX(actualMoveSpeed);
-
-    if (this.moveUp) this.object.translateY(actualMoveSpeed);
-    if (this.moveDown) this.object.translateY(-actualMoveSpeed);
 
     let actualLookSpeed = delta * this.lookSpeed;
 
@@ -269,9 +215,7 @@ class FirstPersonControls {
    */
   dispose() {
     this.domElement.removeEventListener('contextmenu', this._contextmenu, false);
-    this.domElement.removeEventListener('mousedown', this._onMouseDown, false);
     this.domElement.removeEventListener('mousemove', this._onMouseMove, false);
-    this.domElement.removeEventListener('mouseup', this._onMouseUp, false);
 
     window.removeEventListener('keydown', this._onKeyDown, false);
     window.removeEventListener('keyup', this._onKeyUp, false);
