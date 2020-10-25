@@ -17,12 +17,14 @@ import VRControllers from 'components/VRControllers';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import Stage from 'components/Stage';
 import Player from 'components/Player';
+import HudElement from 'components/HudElement';
 import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
-import createHud from './createHud';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { subscribeToEvent, sendEvent } from 'utils/socket';
 import vr from 'utils/vr';
+import start from 'assets/start.png';
+import customize from 'assets/customize.png';
 import './index.css';
 
 const World = ({ id, stage, settings, ...rest }) => {
@@ -36,7 +38,6 @@ const World = ({ id, stage, settings, ...rest }) => {
   const controls = useRef();
   const scene = useRef();
   const hudScene = useRef();
-  const hud = useRef();
   const lights = useRef();
   const controllers = useRef();
   const map = useRef();
@@ -183,6 +184,8 @@ const World = ({ id, stage, settings, ...rest }) => {
   }, [id, username]);
 
   useEffect(() => {
+    const hud = {};
+
     if (player.current) {
       player.current.speed = settings.playerSpeed;
       controls.current = new Controls(
@@ -193,11 +196,54 @@ const World = ({ id, stage, settings, ...rest }) => {
     }
 
     if (stage === 'lobby') {
-      if (hud.current) hudScene.current.remove(hud.current);
+      hud.settings = new HudElement({
+        name: 'settings',
+        text: [
+          `Map: ${settings.map}`,
+          `Impostors: ${settings.impostors}`,
+          `Confirm Ejects: ${settings.confirmEjects ? 'on' : 'off'}`,
+          `Emergency Meetings: ${settings.emergencyMeetings}`,
+          `Emergency Cooldown: ${settings.emergencyCooldown}s`,
+          `Discussion Time: ${settings.discussionTime}s`,
+          `Voting Time: ${settings.votingtime}s`,
+          `Player Speed: ${settings.playerSpeed}x`,
+          `Crewmate Vision: ${settings.crewmateVision}x`,
+          `Impostor Vision: ${settings.impostorVision}x`,
+          `Kill Cooldown: ${settings.killCooldown}s`,
+          `Kill Distance: ${settings.killDistance}`,
+          `Visual Tasks: ${settings.visualTasks ? 'on' : 'off'}`,
+          `Common Tasks: ${settings.commonTasks}`,
+          `Long Tasks: ${settings.longTasks}`,
+          `Short Tasks: ${settings.shortTasks}`,
+        ].join('\n'),
+        fontSize: 32,
+        x: 16,
+        y: 8,
+      });
+      hudScene.current.add(hud.settings.mesh);
 
-      hud.current = createHud({ data: settings });
-      hudScene.current.add(hud.current);
+      hud.start = new HudElement({
+        name: 'start',
+        image: start,
+        bottom: 16,
+        x: 'center',
+      });
+      hudScene.current.add(hud.start.mesh);
+
+      hud.customize = new HudElement({
+        name: 'customize',
+        image: customize,
+        bottom: 16,
+        right: 16,
+      });
+      hudScene.current.add(hud.customize.mesh);
     }
+
+    return () => {
+      hudScene.current.remove(hud.settings.mesh);
+      hudScene.current.remove(hud.start.mesh);
+      hudScene.current.remove(hud.customize.mesh);
+    };
   }, [id, settings, stage]);
 
   useEffect(() => {
