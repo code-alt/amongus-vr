@@ -6,7 +6,7 @@ let socket;
  * Connects to socket
  */
 export const initiateSocket = () => {
-  socket = io('localhost:3000');
+  socket = io('https://amongus-server.codyb.co');
 };
 
 /**
