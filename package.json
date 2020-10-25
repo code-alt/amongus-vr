@@ -2,7 +2,7 @@
   "name": "amongus-vr",
   "version": "0.0.1",
   "homepage": "https://amongus.codyb.co",
-  "description": "",
+  "description": "A VR-ready recreation of the indie game: Among Us.",
   "repository": "https://github.com/CodyJasonBennett/amongus-vr.git",
   "author": "Cody Bennett <hi@codyb.co>",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.5",
     "prettier": "^2.1.2",
-    "react-scripts": "3.4.4",
+    "react-scripts": "4.0.0",
     "react-snap": "1.23.0",
     "react-test-renderer": "^17.0.1",
     "source-map-explorer": "^2.5.0",
@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "classnames": "^2.2.6",
-    "firebase": "^7.24.0",
     "ios-inner-height": "^1.1.1",
     "mathjs": "^7.5.1",
     "react": "^17.0.1",
@@ -60,5 +59,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "https://amongus.codyb.co"
+  "proxy": "https://amongus-server.codyb.co"
 }

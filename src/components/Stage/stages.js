@@ -3,7 +3,9 @@ import skeld from 'assets/models/skeld.glb';
 
 const stages = {
   lobby,
-  skeld,
+  'The Skeld': skeld,
+  'Mira HQ': null,
+  'Polus': null,
 };
 
 export default stages;

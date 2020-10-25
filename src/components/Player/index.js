@@ -32,6 +32,7 @@ class Player {
   }) {
     this.mesh = new Object3D();
     this.clock = new Clock();
+    this.loaded = false;
 
     this.createPlayer({ username, color, position, rotation });
   }
@@ -62,6 +63,8 @@ class Player {
 
     this.mesh.rotation.set(...rotationVector.toArray());
     this.rotation = rotation;
+
+    this.loaded = true;
 
     return this.mesh;
   }
@@ -138,40 +141,46 @@ class Player {
   }
 
   update({ position, rotation }) {
-    const diffX = position && position.x !== this.position.x;
-    const diffZ = position && position.z !== this.position.z;
+    if (this.loaded) {
+      const diffX = position?.x !== this.position.x;
+      const diffZ = position?.z !== this.position.z;
 
-    const diffY = rotation && rotation.y !== this.rotation.y;
+      const diffY = rotation?.y !== this.rotation.y;
 
-    const isMoving = Boolean(diffX || diffZ);
-    const isRotating = Boolean(diffY);
+      const isMoving = Boolean(diffX || diffZ);
+      const isRotating = Boolean(diffY);
 
-    if (isMoving) {
-      const positionVector = new Vector3(
-        position.x,
-        position.y,
-        position.z,
-      );
+      if (isMoving) {
+        const positionUpdate = Object.assign(this.position, position);
 
-      this.mesh.position.set(...positionVector.toArray());
-      this.position = position;
+        const positionVector = new Vector3(
+          positionUpdate.x,
+          positionUpdate.y,
+          positionUpdate.z,
+        );
 
-      const delta = this.clock.getDelta();
-      this.mixer.update(delta);
-    } else if (this.mixer.time !== 0.15) {
-      this.mixer.setTime(0.15);
+        this.mesh.position.set(...positionVector.toArray());
+        this.position = positionUpdate;
+
+        const delta = this.clock.getDelta();
+        this.mixer.update(delta);
+      } else if (this.mixer.time !== 0.15) {
+        this.mixer.setTime(0.15);
+      }
+
+      if (isRotating) {
+        const rotationUpdate = Object.assign(this.rotation, rotation);
+
+        const rotationVector = new Vector3(
+          rotationUpdate.x,
+          rotationUpdate.y,
+          rotationUpdate.z,
+        );
+
+        this.mesh.rotation.set(...rotationVector.toArray());
+        this.rotation = rotationUpdate;
+      };
     }
-
-    if (isRotating) {
-      const rotationVector = new Vector3(
-        rotation.x,
-        rotation.y,
-        rotation.z,
-      );
-
-      this.mesh.rotation.set(...rotationVector.toArray());
-      this.rotation = rotation;
-    };
   }
 }
 

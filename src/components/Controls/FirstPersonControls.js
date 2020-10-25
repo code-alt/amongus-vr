@@ -135,7 +135,7 @@ var FirstPersonControls = function ( object, domElement ) {
 
 	this.onMouseMove = function ( event ) {
 
-		this.touch = false
+		this.touch = false;
 
 		if ( this.domElement === document ) {
 
@@ -155,7 +155,7 @@ var FirstPersonControls = function ( object, domElement ) {
 
 		this.touch = true;
 
-		const touch = event.changedTouches[ 0 ]
+		const touch = event.changedTouches[ 0 ];
 
 		if ( this.domElement === document ) {
 
@@ -329,7 +329,7 @@ var FirstPersonControls = function ( object, domElement ) {
 
 	var _onMouseMove = bind( this, this.onMouseMove );
 	var _onTouchStart = bind( this, this.onTouchStart );
-	var _onTouchMove = bind( this, this.onTouchMove )
+	var _onTouchMove = bind( this, this.onTouchMove );
 	var _onTouchUp = bind( this, this.onTouchUp );
 	var _onKeyDown = bind( this, this.onKeyDown );
 	var _onKeyUp = bind( this, this.onKeyUp );

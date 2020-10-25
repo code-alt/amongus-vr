@@ -22,7 +22,7 @@ var crc32 = (function() {
     }
 
     return (crc ^ (-1)) >>> 0;
-  }
+  };
 })();
 
 /*

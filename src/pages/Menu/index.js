@@ -9,7 +9,7 @@ import Button from 'components/Button';
 import Input from 'components/Input';
 import { useAppContext, useFormInput, useAudio } from 'hooks';
 import prerender from 'utils/prerender';
-import { database } from 'utils/firebase';
+import { sendEvent, subscribeToEvent } from 'utils/socket';
 import { genCode } from 'utils/code';
 import select from 'assets/sounds/select.mp3';
 import click from 'assets/sounds/click.mp3';
@@ -32,10 +32,10 @@ import './index.css';
 const maps = ['The Skeld', 'Mira HQ', 'Polus'];
 
 function filterLobbies(lobbies, mapFilter, impostorsFilter) {
-  return lobbies.filter(({ settings }) =>
+  return lobbies?.filter(({ settings }) =>
     mapFilter === maps.indexOf(settings.map) &&
     impostorsFilter === 'Any' ? true : impostorsFilter === settings.impostors
-  );
+  ) || [];
 }
 
 const Menu = () => {
@@ -45,7 +45,7 @@ const Menu = () => {
   const [menuState, setMenuState] = useState('home');
   const [, toggleSelect] = useAudio(select);
   const [, toggleClick] = useAudio(click);
-  const usernameInput = useFormInput(username);
+  const usernameInput = useFormInput(username || '');
   const codeInput = useFormInput('');
   const [lobbies, setLobbies] = useState([]);
   const [map, setMap] = useState(0);
@@ -55,7 +55,8 @@ const Menu = () => {
   const [impostorsFilter, setImpostorsFilter] = useState('Any');
   const recommendedPlayers = [null, 4, 7, 9];
 
-  const createLobby = () => {
+  const createLobby = (event) => {
+    event.preventDefault();
     if (!username || lobbies.filter(lobby => lobby.host === username)[0]) return;
 
     const id = genCode();
@@ -67,41 +68,20 @@ const Menu = () => {
         map: maps[map],
         impostors,
         maxPlayers,
-        confirmEjects: true,
-        emergencyMeetings: 1,
-        emergencyCooldown: 0,
-        discussionTime: 15,
-        votingtime: 120,
-        playerSpeed: 1,
-        crewmateVision: 1,
-        impostorVision: 1.5,
-        killCooldown: 45,
-        killDistance: 'normal',
-        visualTasks: true,
-        commonTasks: 1,
-        longTasks: 1,
-        shortTasks: 2
       },
     };
 
-    database.ref(`/lobbies/${id}`).set(lobbyData);
-    database.ref(`/lobbies`).on('value', snap => {
-      const data = snap.val();
-      if (!data) return;
-
-      setLobbies(Object.values(data));
-    });
+    sendEvent('lobbyUpdate', lobbyData);
 
     return history.push(`/lobby/${id}`);
   };
 
   useEffect(() => {
-    database.ref(`/lobbies`).on('value', snap => {
-      const data = snap.val();
-      if (!data) return;
-
-      setLobbies(Object.values(data));
+    subscribeToEvent('lobbyPool', lobbies => {
+      setLobbies(lobbies);
     });
+
+    sendEvent('lobbyPool');
   }, []);
 
   const onSubmit = useCallback(event => {

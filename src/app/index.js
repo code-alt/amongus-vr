@@ -7,13 +7,13 @@ import AmongUs from 'assets/fonts/among-us.woff2';
 import { useLocalStorage, usePrefersReducedMotion } from 'hooks';
 import { initialState, reducer } from 'app/reducer';
 import { reflow } from 'utils/transition';
+import { initiateSocket, disconnectSocket } from 'utils/socket';
 import prerender from 'utils/prerender';
 import './reset.css';
 import './index.css';
 
 const Menu = lazy(() => import('pages/Menu'));
 const Lobby = lazy(() => import('pages/Lobby'));
-const Game = lazy(() => import('pages/Game'));
 const NotFound = lazy(() => import('pages/404'));
 
 export const AppContext = createContext();
@@ -57,6 +57,14 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    initiateSocket();
+
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
+  useEffect(() => {
     dispatch({ type: 'setUsername', value: storedUsername });
   }, [storedUsername]);
 
@@ -97,7 +105,6 @@ const AppRoutes = () => {
             <Switch location={location}>
               <Route exact path="/" component={Menu} />
               <Route exact path={['/lobby', '/lobby/:id']} component={Lobby} />
-              <Route exact path={['/game', '/game/:id']} component={Game} />
               <Route component={NotFound} />
             </Switch>
           </Suspense>

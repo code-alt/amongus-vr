@@ -21,14 +21,14 @@ import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
 import createHud from './createHud';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
-import { database } from 'utils/firebase';
+import { subscribeToEvent, sendEvent } from 'utils/socket';
 import vr from 'utils/vr';
 import './index.css';
 
-const World = ({ id, stage, ...rest }) => {
+const World = ({ id, stage, settings, ...rest }) => {
   const { username } = useAppContext();
   const playerSpeed = useRef(1);
-  const players = useRef([]);
+  const players = useRef({});
   const canvasRef = useRef();
   const renderer = useRef();
   const camera = useRef();
@@ -44,6 +44,7 @@ const World = ({ id, stage, ...rest }) => {
   const raycaster = useRef(new Raycaster());
   const raycasterDirection = useRef(new Vector3(0, -1, 0));
   const oldPosition = useRef(new Vector3());
+  const oldRotation = useRef(new Vector3());
 
   useEffect(() => {
     const { innerWidth, innerHeight } = window;
@@ -146,105 +147,63 @@ const World = ({ id, stage, ...rest }) => {
   useEffect(() => {
     const createPlayer = (data) => {
       const player = new Player(data);
-      players.current[data.username] = player;
 
+      players.current[data.username] = player;
       scene.current.add(player.mesh);
 
       return player;
     };
 
-    const updatePlayer = (snap) => {
-      const data = snap.val();
-      if (!data) return;
-
-      const player = players.current[data.username];
-      if (player.mixer) player.update(data);
-
-      return player;
-    };
-
-    const removePlayer = (snap) => {
-      const data = snap.val();
-      if (!data) return;
-
-      ref.child(`players/${data.username}`).off('value', updatePlayer);
-
+    const deletePlayer = (data) => {
       const player = players.current[data.username];
 
       scene.current.remove(player.mesh);
 
-      const playerIndex = players.current.indexOf(player);
-      players.current.slice(playerIndex, 1);
+      delete players.current[data.username];
+
+      return player;
     };
 
-    const ref = database.ref(`lobbies/${id}`);
-
-    ref.child('players').on('child_added', snap => {
-      const data = snap.val();
+    const updatePlayer = (data) => {
       if (!data) return;
+      if (data.username === username) return;
 
-      if (data.username !== username && !players.current[data.username]) {
-        createPlayer(data);
+      const player = players.current[data.username];
 
-        ref.child(`players/${data.username}`).on('value', updatePlayer);
-      }
-    });
+      if (player?.disconnected) return deletePlayer(data);
+      if (!player) return createPlayer(data);
 
-    ref.child('players').on('child_removed', snap => removePlayer);
-
-    return () => {
-      ref.child(`players/${username}`).remove();
+      return player.update(data);
     };
+
+    subscribeToEvent('playerUpdate', updatePlayer);
+
+    sendEvent('playerUpdate', { lobby: id, username });
+    sendEvent('playerJoin');
   }, [id, username]);
 
   useEffect(() => {
-    const ref = database.ref(`lobbies/${id}`);
-
-    const updateHud = snap => {
-      const data = snap.val();
-      if (!data) return;
-
-      if (player.current) {
-        player.current.speed = data.playerSpeed;
-        controls.current = new Controls(
-          player.current,
-          camera.current,
-          renderer.current,
-        );
-      }
-
-      if (hud.current) {
-        hudScene.current.remove(hud.current);
-      }
-
-      hud.current = createHud({ data });
-      hudScene.current.add(hud.current);
-    };
-
-    const handleHudChange = (snap) => {
-      const data = snap.val();
-      if (!data) return;
-
-      ref.child('settings').once('value', updateHud);
-    };
-
-    const isLobby = stage === 'lobby';
-
-    if (isLobby) {
-      ref.child('settings').once('value', updateHud);
-      ref.child('settings').on('child_changed', handleHudChange);
+    if (player.current) {
+      player.current.speed = settings.playerSpeed;
+      controls.current = new Controls(
+        player.current,
+        camera.current,
+        renderer.current,
+      );
     }
 
-    return () => {
-      if (isLobby) {
-        ref.child('settings').off('child_changed', handleHudChange);
-      }
-    };
-  }, [id, username, stage]);
+    if (stage === 'lobby') {
+      if (hud.current) hudScene.current.remove(hud.current);
+
+      hud.current = createHud({ data: settings });
+      hudScene.current.add(hud.current);
+    }
+  }, [id, settings, stage]);
 
   useEffect(() => {
     const animate = () => {
       oldPosition.current.copy(player.current.position);
+      oldRotation.current.copy(player.current.rotation);
 
       controls.current.update();
 
@@ -263,18 +222,26 @@ const World = ({ id, stage, ...rest }) => {
         };
       }
 
-      const ref = database.ref(`lobbies/${id}`);
-      ref.child(`players/${username}`).update({
-        username,
-        position: {
-          x: player.current.position.x,
-          y: player.current.position.y,
-          z: player.current.position.z,
-        },
-        rotation: {
-          y: player.current.rotation.y,
-        },
-      });
+      const posXChange = oldPosition.current.x.toFixed(3) !== player.current.position.x.toFixed(3);
+      const posZChange = oldPosition.current.z.toFixed(3) !== player.current.position.z.toFixed(3);
+      const rotYChange = oldRotation.current.y.toFixed(2) !== player.current.rotation.y.toFixed(2);
+      const playerChanged = (posXChange || posZChange) || rotYChange;
+
+      if (player.current && playerChanged) {
+        sendEvent('playerUpdate', {
+          username,
+          position: {
+            x: player.current.position.x.toFixed(3),
+            y: player.current.position.y.toFixed(3),
+            z: player.current.position.z.toFixed(3),
+          },
+          rotation: {
+            x: player.current.rotation.x.toFixed(2),
+            y: player.current.rotation.y.toFixed(2),
+            z: player.current.rotation.z.toFixed(2),
+          },
+        });
+      }
 
       renderer.current.render(scene.current, camera.current);
       renderer.current.render(hudScene.current, hudCamera.current);
@@ -285,7 +252,7 @@ const World = ({ id, stage, ...rest }) => {
     return () => {
       renderer.current.setAnimationLoop(null);
     };
-  }, [username, id]);
+  }, [username]);
 
   return (
     <canvas
