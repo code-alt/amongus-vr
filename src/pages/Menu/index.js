@@ -30,6 +30,7 @@ import playersIcon from 'assets/players-icon.png';
 import './index.css';
 
 const maps = ['The Skeld', 'Mira HQ', 'Polus'];
+const recommendedPlayers = [null, 4, 7, 9];
 
 function filterLobbies(lobbies, mapFilter, impostorsFilter) {
   return lobbies?.filter(({ settings }) =>
@@ -53,7 +54,6 @@ const Menu = () => {
   const [maxPlayers, setMaxPlayers] = useState(9);
   const [mapFilter, setMapFilter] = useState(0);
   const [impostorsFilter, setImpostorsFilter] = useState('Any');
-  const recommendedPlayers = [null, 4, 7, 9];
 
   const createLobby = (event) => {
     event.preventDefault();
@@ -117,7 +117,7 @@ const Menu = () => {
     if (maxPlayers < minPlayers) {
       setMaxPlayers(minPlayers);
     }
-  }, [maxPlayers, recommendedPlayers, impostors]);
+  }, [maxPlayers, impostors]);
 
   return (
     <section className="menu">
