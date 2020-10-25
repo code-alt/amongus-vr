@@ -1,4 +1,4 @@
-import { Vector3, } from 'three';
+import { Vector3, Math as MathUtils } from 'three';
 
 class FirstPersonControls {
   /**
@@ -55,12 +55,12 @@ class FirstPersonControls {
       this.domElement.setAttribute('tabindex', - 1);
     }
 
-    this._contextMenu = ::this.contextMenu;
-    this._onMouseMove = ::this.onMouseMove;
-    this._onMouseDown = ::this.onMouseDown;
-    this._onMouseUp = ::this.onMouseUp;
-    this._onKeyDown = ::this.onKeyDown;
-    this._onKeyUp = ::this.onKeyUp;
+    this._contextMenu = this.contextMenu.bind(this);
+    this._onMouseMove = this.onMouseMove.bind(this);
+    this._onMouseDown = this.onMouseDown.bind(this);
+    this._onMouseUp = this.onMouseUp.bind(this);
+    this._onKeyDown = this.onKeyDown.bind(this);
+    this._onKeyUp = this.onKeyUp.bind(this);
 
     this.handleResize();
     this.bindEvents();
@@ -238,12 +238,12 @@ class FirstPersonControls {
     if (this.lookVertical) this.lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
 
     this.lat = Math.max(-85, Math.min( 85, this.lat));
-    this.phi = Math.degToRad(90 - this.lat);
+    this.phi = MathUtils.degToRad(90 - this.lat);
 
-    this.theta = Math.degToRad(this.lon);
+    this.theta = MathUtils.degToRad(this.lon);
 
     if (this.constrainVertical) {
-      this.phi = Math.mapLinear(this.phi, 0, Math.PI, this.verticalMin, this.verticalMax);
+      this.phi = MathUtils.mapLinear(this.phi, 0, Math.PI, this.verticalMin, this.verticalMax);
     }
 
     const targetPosition = this.target;
