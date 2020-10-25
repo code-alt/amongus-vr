@@ -1,5 +1,5 @@
 import { Clock } from 'three';
-import { FirstPersonControls } from './FirstPersonControls';
+import FirstPersonControls from './FirstPersonControls';
 
 class FPSControls {
   constructor(target, renderer) {
