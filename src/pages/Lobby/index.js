@@ -7,8 +7,8 @@ import prerender from 'utils/prerender';
 import lobby from 'assets/models/lobby.glb';
 import skeld from 'assets/models/skeld.glb';
 import astronaut from 'assets/models/astronaut.glb';
-import start from 'assets/start.png';
-import customize from 'assets/customize.png';
+import start from 'assets/game/start.png';
+import customize from 'assets/game/customize.png';
 
 const Engine = lazy(() => import('components/Engine'));
 

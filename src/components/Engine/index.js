@@ -23,8 +23,8 @@ import { useAppContext } from 'hooks';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { subscribeToEvent, sendEvent } from 'utils/socket';
 import vr from 'utils/vr';
-import start from 'assets/start.png';
-import customize from 'assets/customize.png';
+import start from 'assets/game/start.png';
+import customize from 'assets/game/customize.png';
 import './index.css';
 
 const World = ({ id, stage, settings, ...rest }) => {
