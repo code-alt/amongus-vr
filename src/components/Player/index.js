@@ -4,6 +4,7 @@ import {
   Object3D,
   Texture,
   SpriteMaterial,
+  NormalBlending,
   Sprite,
   TextureLoader,
   MeshBasicMaterial,
@@ -87,6 +88,8 @@ class Player {
 
     const labelMaterial = new SpriteMaterial({
       map: labelTexture,
+      blending: NormalBlending,
+      depthTest: true,
       transparent: true,
     });
 
