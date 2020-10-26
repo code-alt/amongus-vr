@@ -1,4 +1,3 @@
-import React from 'react';
 import classNames from 'classnames';
 import { useAudio } from 'hooks';
 import select from 'assets/sounds/select.mp3';

@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect, Fragment, Suspense } from 'react';
+import { lazy, useState, useEffect, Fragment, Suspense } from 'react';
 import { Redirect, useRouteMatch } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAppContext } from 'hooks';

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, createContext, useReducer, Fragment } from 'react';
+import { lazy, Suspense, useEffect, createContext, useReducer, Fragment } from 'react';
 import { BrowserRouter, Switch, Route, useLocation } from 'react-router-dom';
 import { Transition, config as transitionConfig } from 'react-transition-group';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
