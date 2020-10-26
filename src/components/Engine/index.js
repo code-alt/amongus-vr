@@ -7,7 +7,6 @@ import {
   PerspectiveCamera,
   Scene,
   Fog,
-  OrthographicCamera,
   DirectionalLight,
   HemisphereLight,
   Object3D,
@@ -31,10 +30,8 @@ const World = ({ id, stage, settings, ...rest }) => {
   const canvasRef = useRef();
   const renderer = useRef();
   const camera = useRef();
-  const hudCamera = useRef();
   const controls = useRef();
   const scene = useRef();
-  const hudScene = useRef();
   const lights = useRef();
   const controllers = useRef();
   const map = useRef();
@@ -68,9 +65,6 @@ const World = ({ id, stage, settings, ...rest }) => {
     scene.current = new Scene();
     scene.current.fog = new Fog(0x000000, 1, 30);
 
-    hudScene.current = new Scene();
-    hudCamera.current = new OrthographicCamera(-innerWidth / 2, innerWidth / 2, innerHeight / 2, -innerHeight / 2, 0, 30);
-
     if (isVR) {
       controllers.current = new VRControllers(renderer.current);
       scene.current.add(controllers.current);
@@ -97,7 +91,6 @@ const World = ({ id, stage, settings, ...rest }) => {
 
     return () => {
       cleanScene(scene.current);
-      cleanScene(hudScene.current);
       cleanRenderer(renderer.current);
     };
   }, [stage]);
@@ -130,8 +123,6 @@ const World = ({ id, stage, settings, ...rest }) => {
       renderer.current.setSize(windowWidth, canvasHeight);
       camera.current.aspect = windowWidth / canvasHeight;
       camera.current.updateProjectionMatrix();
-      hudCamera.current.aspect = windowWidth / canvasHeight;
-      hudCamera.current.updateProjectionMatrix();
     };
 
     window.addEventListener('resize', handleResize);
@@ -225,7 +216,6 @@ const World = ({ id, stage, settings, ...rest }) => {
       }
 
       renderer.current.render(scene.current, camera.current);
-      renderer.current.render(hudScene.current, hudCamera.current);
     };
 
     renderer.current.setAnimationLoop(animate);
