@@ -159,6 +159,7 @@ const World = ({ id, stage, settings, ...rest }) => {
       const player = players.current[data.username];
 
       scene.current.remove(player.mesh);
+      player.dispose();
 
       delete players.current[data.username];
 
@@ -184,7 +185,7 @@ const World = ({ id, stage, settings, ...rest }) => {
   }, [id, username]);
 
   useEffect(() => {
-    const hud = {};
+    let hudElements;
 
     if (player.current) {
       player.current.speed = settings.playerSpeed;
@@ -196,7 +197,7 @@ const World = ({ id, stage, settings, ...rest }) => {
     }
 
     if (stage === 'lobby') {
-      hud.settings = new HudElement({
+      const settingsHud = new HudElement({
         name: 'settings',
         text: [
           `Map: ${settings.map}`,
@@ -220,29 +221,27 @@ const World = ({ id, stage, settings, ...rest }) => {
         x: 16,
         y: 8,
       });
-      hudScene.current.add(hud.settings.mesh);
 
-      hud.start = new HudElement({
+      const startHud = new HudElement({
         name: 'start',
         image: start,
         bottom: 16,
         x: 'center',
       });
-      hudScene.current.add(hud.start.mesh);
 
-      hud.customize = new HudElement({
+      const customizeHud = new HudElement({
         name: 'customize',
         image: customize,
         bottom: 16,
         right: 16,
       });
-      hudScene.current.add(hud.customize.mesh);
+
+      hudElements = [settingsHud.mesh, startHud.mesh, customizeHud.mesh];
+      hudElements.forEach(element => hudScene.current.add(element));
     }
 
     return () => {
-      hudScene.current.remove(hud.settings.mesh);
-      hudScene.current.remove(hud.start.mesh);
-      hudScene.current.remove(hud.customize.mesh);
+      hudElements.current.forEach(element => hudScene.current.remove(element));
     };
   }, [id, settings, stage]);
 

@@ -12,6 +12,7 @@ import {
 } from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { cleanMaterial } from 'utils/three';
 import astronautModelPath from 'assets/models/astronaut.glb';
 import textures from './textures';
 
@@ -181,6 +182,22 @@ class Player {
         this.rotation = rotationUpdate;
       };
     }
+  }
+
+  dispose() {
+    this.mesh.traverse(node => {
+      if (!node.isMesh) return;
+
+      node.geometry.dispose();
+
+      if (node.material.isMaterial) {
+        cleanMaterial(node.material);
+      } else {
+        for (const material of node.material) {
+          cleanMaterial(material);
+        }
+      }
+    });
   }
 }
 
