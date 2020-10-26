@@ -17,19 +17,16 @@ import VRControllers from 'components/VRControllers';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import Stage from 'components/Stage';
 import Player from 'components/Player';
-import HudElement from 'components/HudElement';
 import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { subscribeToEvent, sendEvent } from 'utils/socket';
 import vr from 'utils/vr';
-import start from 'assets/game/start.png';
-import customize from 'assets/game/customize.png';
 import './index.css';
 
 const World = ({ id, stage, settings, ...rest }) => {
   const { username } = useAppContext();
-  const playerSpeed = useRef(1);
+  const playerSpeed = useRef(settings.playeSpeed || 1);
   const players = useRef({});
   const canvasRef = useRef();
   const renderer = useRef();
@@ -183,67 +180,6 @@ const World = ({ id, stage, settings, ...rest }) => {
     sendEvent('playerUpdate', { lobby: id, username });
     sendEvent('playerJoin');
   }, [id, username]);
-
-  useEffect(() => {
-    let hudElements;
-
-    if (player.current) {
-      player.current.speed = settings.playerSpeed;
-      controls.current = new Controls(
-        player.current,
-        camera.current,
-        renderer.current,
-      );
-    }
-
-    if (stage === 'lobby') {
-      const settingsHud = new HudElement({
-        name: 'settings',
-        text: [
-          `Map: ${settings.map}`,
-          `Impostors: ${settings.impostors}`,
-          `Confirm Ejects: ${settings.confirmEjects ? 'on' : 'off'}`,
-          `Emergency Meetings: ${settings.emergencyMeetings}`,
-          `Emergency Cooldown: ${settings.emergencyCooldown}s`,
-          `Discussion Time: ${settings.discussionTime}s`,
-          `Voting Time: ${settings.votingtime}s`,
-          `Player Speed: ${settings.playerSpeed}x`,
-          `Crewmate Vision: ${settings.crewmateVision}x`,
-          `Impostor Vision: ${settings.impostorVision}x`,
-          `Kill Cooldown: ${settings.killCooldown}s`,
-          `Kill Distance: ${settings.killDistance}`,
-          `Visual Tasks: ${settings.visualTasks ? 'on' : 'off'}`,
-          `Common Tasks: ${settings.commonTasks}`,
-          `Long Tasks: ${settings.longTasks}`,
-          `Short Tasks: ${settings.shortTasks}`,
-        ].join('\n'),
-        fontSize: 32,
-        x: 16,
-        y: 8,
-      });
-
-      const startHud = new HudElement({
-        name: 'start',
-        image: start,
-        bottom: 16,
-        x: 'center',
-      });
-
-      const customizeHud = new HudElement({
-        name: 'customize',
-        image: customize,
-        bottom: 16,
-        right: 16,
-      });
-
-      hudElements = [settingsHud.mesh, startHud.mesh, customizeHud.mesh];
-      hudElements.forEach(element => hudScene.current.add(element));
-    }
-
-    return () => {
-      hudElements.current.forEach(element => hudScene.current.remove(element));
-    };
-  }, [id, settings, stage]);
 
   useEffect(() => {
     const animate = () => {
