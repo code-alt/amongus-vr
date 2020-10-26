@@ -7,6 +7,8 @@ import prerender from 'utils/prerender';
 import lobby from 'assets/models/lobby.glb';
 import skeld from 'assets/models/skeld.glb';
 import astronaut from 'assets/models/astronaut.glb';
+import start from 'assets/game/start.png';
+import customize from 'assets/game/customize.png';
 
 const Engine = lazy(() => import('components/Engine'));
 
@@ -51,6 +53,8 @@ const Lobby = () => {
         <link rel="prefetch" href={lobby} as="fetch" crossorigin="" />
         <link rel="prefetch" href={skeld} as="fetch" crossorigin="" />
         <link rel="prefetch" href={astronaut} as="fetch" crossorigin="" />
+        <link rel="prefetch" href={start} as="fetch" crossorigin="" />
+        <link rel="prefetch" href={customize} as="fetch" crossorigin="" />
       </Helmet>
       {(ready && !inGame) &&
         <Suspense fallback={null}>
