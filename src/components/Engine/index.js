@@ -7,13 +7,14 @@ import {
   PerspectiveCamera,
   Scene,
   Fog,
+  Object3D,
+  Group,
   DirectionalLight,
   HemisphereLight,
-  Object3D,
 } from 'three';
-import Controls from 'components/Controls';
-import VRControllers from 'components/VRControllers';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
+import Controls from 'components/Controls';
 import Stage from 'components/Stage';
 import Player from 'components/Player';
 import Hud from 'components/Hud';
@@ -36,7 +37,6 @@ const World = ({ id, stage, settings, ...rest }) => {
   const controls = useRef();
   const scene = useRef();
   const lights = useRef();
-  const controllers = useRef();
   const map = useRef();
   const player = useRef();
   const raycaster = useRef(new Raycaster());
@@ -66,11 +66,6 @@ const World = ({ id, stage, settings, ...rest }) => {
     scene.current = new Scene();
     scene.current.fog = new Fog(0x000000, 1, 30);
 
-    if (isVR) {
-      controllers.current = new VRControllers(renderer.current);
-      scene.current.add(controllers.current);
-    }
-
     map.current = new Stage(stage);
     scene.current.add(map.current.mesh);
 
@@ -81,7 +76,27 @@ const World = ({ id, stage, settings, ...rest }) => {
     player.current.add(camera.current);
 
     if (isVR) {
-      player.current.add(controllers.current);
+      const controllers = new Group();
+
+      const controller1 = renderer.current.xr.getController(0);
+      controller1.name = 'left';
+      controllers.add(controller1);
+
+      const controller2 = renderer.current.xr.getController(1);
+      controller2.name = 'right';
+      controllers.add(controller2);
+
+      const controllerModelFactory = new XRControllerModelFactory();
+
+      const controllerGrip1 = renderer.current.xr.getControllerGrip(0);
+      controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+      controllers.add(controllerGrip1);
+
+      const controllerGrip2 = renderer.current.xr.getControllerGrip(1);
+      controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
+      controllers.add(controllerGrip2);
+
+      player.current.add(controllers);
     }
 
     controls.current = new Controls(
