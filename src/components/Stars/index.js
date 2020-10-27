@@ -2,58 +2,78 @@ import { useRef, useEffect } from 'react';
 import { randomInt } from 'mathjs';
 import './index.css';
 
-function Stars() {
-  const width = useRef(window.innerWidth);
-  const height = useRef(window.innerHeight);
-  const start = useRef(Date.now());
+function createStar(xMax, yMax) {
+  const size = randomInt(1, 4);
+
+  const star = {
+    x: xMax <= 5 ? xMax : randomInt(5, xMax),
+    y: yMax <= 5 ? yMax : randomInt(5, yMax),
+    name: size.toString(),
+    size,
+  };
+
+  return star;
+}
+
+function drawStar(context, star) {
+  context.beginPath();
+  context.arc(star.x, star.y, star.size, 0, 2 * Math.PI);
+  context.shadowColor = '#e6e6e6';
+  context.shadowBlur = 4;
+  context.fillStyle = '#e6e6e6';
+  context.fill();
+}
+
+const Stars = (props) => {
   const canvasRef = useRef();
   const context = useRef();
-  const stars = useRef([]);
+  const stars = useRef();
+  const start = useRef(Date.now());
 
   useEffect(() => {
-    context.current = canvasRef.current.getContext('2d');
-    canvasRef.current.width = width.current;
-    canvasRef.current.height = height.current;
+    const handleResize = () => {
+      const { innerWidth, innerHeight } = window;
+      context.current = canvasRef.current.getContext('2d');
+      canvasRef.current.width = innerWidth;
+      canvasRef.current.height = innerHeight;
 
-    for (let i = 0; i < 100; i++) {
-      const size = randomInt(1, 4);
+      stars.current = [];
 
-      const star = {
-        x: randomInt(5, width.current),
-        y: randomInt(5, height.current),
-        name: size.toString(),
-        size,
-      };
+      for (let i = 0; i < 100; i++) {
+        const star = createStar(innerWidth, innerHeight);
 
-      stars.current.push(star);
+        stars.current.push(star);
 
-      context.current.beginPath();
-      context.current.arc(star.x, star.y, star.size, 0, 2 * Math.PI);
-      context.current.fillStyle = "#e6e6e6";
-      context.current.fill();
-    }
+        drawStar(context.current, star);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {
     let animation;
 
     const animate = () => {
+      const { innerWidth, innerHeight } = window;
       animation = requestAnimationFrame(animate);
 
       const time = Date.now();
       const delta = (start.current - time) * -0.08;
       start.current = time;
 
-      context.current.clearRect(0, 0, width.current, height.current);
+      context.current.clearRect(0, 0, innerWidth, innerHeight);
 
       for (let i = 0; i < 100; i++) {
         stars.current[i].x += delta * parseInt(stars.current[i].name, 10) * 0.2;
-        if (stars.current[i].x > width.current) stars.current[i].x = 0;
+        if (stars.current[i].x > innerWidth) stars.current[i] = createStar(0, innerHeight);
 
-        context.current.beginPath();
-        context.current.arc(stars.current[i].x, stars.current[i].y, stars.current[i].size, 0, 2 * Math.PI);
-        context.current.fillStyle = "#e6e6e6";
-        context.current.fill();
+        drawStar(context.current, stars.current[i]);
       }
     };
 
@@ -64,7 +84,14 @@ function Stars() {
     };
   }, []);
 
-  return <canvas className="stars" ref={canvasRef}></canvas>;
-}
+  return (
+    <canvas
+      aria-hidden
+      className="stars"
+      ref={canvasRef}
+      {...props}
+    />
+  );
+};
 
 export default Stars;
