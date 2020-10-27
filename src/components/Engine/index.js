@@ -53,7 +53,6 @@ const World = ({ id, stage, settings, ...rest }) => {
     });
     renderer.current.setSize(innerWidth, innerHeight);
     renderer.current.setPixelRatio(2);
-    renderer.current.autoClear = false;
     renderer.current.outputEncoding = sRGBEncoding;
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
