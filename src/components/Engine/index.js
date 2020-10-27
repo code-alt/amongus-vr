@@ -29,7 +29,7 @@ import './index.css';
 
 const World = ({ id, stage, settings, ...rest }) => {
   const { username } = useAppContext();
-  const playerSpeed = useRef(settings.playeSpeed || 1);
+  const playerSpeed = useRef(settings.playerSpeed || 1);
   const players = useRef({});
   const canvasRef = useRef();
   const renderer = useRef();
