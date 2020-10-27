@@ -149,6 +149,8 @@ const World = ({ id, stage, settings, ...rest }) => {
   }, []);
 
   useEffect(() => {
+    let init = false;
+
     const createPlayer = (data) => {
       const player = new Player(data);
 
@@ -171,14 +173,23 @@ const World = ({ id, stage, settings, ...rest }) => {
 
     const updatePlayer = (data) => {
       if (!data) return;
-      if (data.username === username) return;
+      if (data.username === username) {
+        if (init) return;
 
-      const player = players.current[data.username];
+        const { position, rotation } = data;
 
-      if (player?.disconnected) return deletePlayer(data);
-      if (!player) return createPlayer(data);
+        player.current.position.set(position.x, position.y, position.z);
+        player.current.rotation.y = rotation.y;
 
-      return player.update(data);
+        return;
+      };
+
+      const playerEntry = players.current[data.username];
+
+      if (playerEntry?.disconnected) return deletePlayer(data);
+      if (!playerEntry) return createPlayer(data);
+
+      return playerEntry.update(data);
     };
 
     subscribeToEvent('playerUpdate', updatePlayer);
@@ -279,25 +290,27 @@ const World = ({ id, stage, settings, ...rest }) => {
         };
       }
 
-      const posXChange = oldPosition.current.x.toFixed(3) !== player.current.position.x.toFixed(3);
-      const posZChange = oldPosition.current.z.toFixed(3) !== player.current.position.z.toFixed(3);
-      const rotYChange = oldRotation.current.y.toFixed(2) !== player.current.rotation.y.toFixed(2);
-      const playerChanged = (posXChange || posZChange) || rotYChange;
+      if (player.current && false) {
+        const posXChange = oldPosition.current.x.toFixed(3) !== player.current.position.x.toFixed(3);
+        const posZChange = oldPosition.current.z.toFixed(3) !== player.current.position.z.toFixed(3);
+        const rotYChange = oldRotation.current.y.toFixed(2) !== player.current.rotation.y.toFixed(2);
+        const playerChanged = (posXChange || posZChange) || rotYChange;
 
-      if (player.current && playerChanged) {
-        sendEvent('playerUpdate', {
-          username,
-          position: {
-            x: player.current.position.x.toFixed(3),
-            y: player.current.position.y.toFixed(3),
-            z: player.current.position.z.toFixed(3),
-          },
-          rotation: {
-            x: player.current.rotation.x.toFixed(2),
-            y: player.current.rotation.y.toFixed(2),
-            z: player.current.rotation.z.toFixed(2),
-          },
-        });
+        if (playerChanged) {
+          sendEvent('playerUpdate', {
+            username,
+            position: {
+              x: player.current.position.x.toFixed(3),
+              y: player.current.position.y.toFixed(3),
+              z: player.current.position.z.toFixed(3),
+            },
+            rotation: {
+              x: player.current.rotation.x.toFixed(2),
+              y: player.current.rotation.y.toFixed(2),
+              z: player.current.rotation.z.toFixed(2),
+            },
+          });
+        }
       }
 
       renderer.current.render(scene.current, camera.current);

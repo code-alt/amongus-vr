@@ -63,6 +63,7 @@ const Menu = () => {
 
     const lobbyData = {
       id,
+      inGame: true,
       host: username,
       settings: {
         map: maps[map],
