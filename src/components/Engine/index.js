@@ -21,7 +21,7 @@ import innerHeight from 'ios-inner-height';
 import { useAppContext } from 'hooks';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { subscribeToEvent, sendEvent } from 'utils/socket';
-import vr from 'utils/vr';
+import isVR from 'utils/isVR';
 import start from 'assets/game/start.png';
 import customize from 'assets/game/customize.png';
 import './index.css';
@@ -58,9 +58,7 @@ const World = ({ id, stage, settings, ...rest }) => {
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
     renderer.current.xr.setFramebufferScaleFactor(2.0);
-    if ('xr' in navigator) document.body.appendChild(VRButton.createButton(renderer.current));
-
-    const isVR = vr(renderer.current);
+    if (isVR) document.body.appendChild(VRButton.createButton(renderer.current));
 
     camera.current = new PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 500);
     camera.current.position.set(0, 1.6, 0);
@@ -187,7 +185,7 @@ const World = ({ id, stage, settings, ...rest }) => {
       );
     }
 
-    if (stage === 'lobby' && vr(renderer.current)) {
+    if (stage === 'lobby' && isVR) {
       const settingsHud = new Hud({
         name: 'settings',
         text: [
@@ -239,7 +237,9 @@ const World = ({ id, stage, settings, ...rest }) => {
     }
 
     return () => {
-      hudElements?.forEach(element => camera.current.remove(element));
+      if (stage === 'lobby' && isVR) {
+        hudElements?.forEach(element => camera.current.remove(element));
+      }
     };
   }, [id, settings, stage]);
 
