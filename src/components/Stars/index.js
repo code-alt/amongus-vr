@@ -6,8 +6,8 @@ function createStar(xMax, yMax) {
   const size = randomInt(1, 4);
 
   const star = {
-    x: xMax <= 5 ? xMax : randomInt(5, xMax),
-    y: yMax <= 5 ? yMax : randomInt(5, yMax),
+    x: randomInt(5, xMax),
+    y: randomInt(5, yMax),
     name: size.toString(),
     size,
   };
