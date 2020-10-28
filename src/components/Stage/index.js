@@ -35,6 +35,8 @@ class Stage {
         node.visible = false;
         node.position.y -= 1;
         this.navMesh = node;
+      } else if (node.isMesh) {
+        node.material.metalness = 0;
       }
     });
 
