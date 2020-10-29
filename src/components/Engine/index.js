@@ -7,6 +7,7 @@ import {
   PerspectiveCamera,
   Scene,
   Fog,
+  Vector2,
   Object3D,
   Group,
   HemisphereLight,
@@ -15,6 +16,9 @@ import {
 } from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import Controls from 'components/Controls';
 import Stage from 'components/Stage';
 import Player from 'components/Player';
@@ -38,6 +42,7 @@ const World = ({ id, stage, settings, ...rest }) => {
   const camera = useRef();
   const controls = useRef();
   const scene = useRef();
+  const composer = useRef();
   const lights = useRef();
   const map = useRef();
   const player = useRef();
@@ -73,6 +78,17 @@ const World = ({ id, stage, settings, ...rest }) => {
       scene.current.environment = envMap;
       // scene.current.background = envMap;
     });
+
+    const renderScene = new RenderPass(scene.current, camera.current);
+
+		const bloomPass = new UnrealBloomPass(new Vector2(innerWidth, innerHeight), 1.5, 0.4, 0.85 );
+		bloomPass.threshold = 0.25;
+		bloomPass.strength = 0.25;
+		bloomPass.radius = 0;
+
+		composer.current = new EffectComposer(renderer.current);
+		composer.current.addPass(renderScene);
+		composer.current.addPass(bloomPass);
 
     map.current = new Stage(stage);
     scene.current.add(map.current.mesh);
@@ -315,7 +331,7 @@ const World = ({ id, stage, settings, ...rest }) => {
         }
       }
 
-      renderer.current.render(scene.current, camera.current);
+      composer.current.render();
     };
 
     renderer.current.setAnimationLoop(animate);
