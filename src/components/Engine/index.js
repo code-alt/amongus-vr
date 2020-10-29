@@ -9,8 +9,9 @@ import {
   Fog,
   Object3D,
   Group,
-  DirectionalLight,
   HemisphereLight,
+  AmbientLight,
+  DirectionalLight,
 } from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
@@ -19,6 +20,7 @@ import Stage from 'components/Stage';
 import Player from 'components/Player';
 import Hud from 'components/Hud';
 import innerHeight from 'ios-inner-height';
+import getEnvironmentMap from './getEnvironmentMap';
 import { useAppContext } from 'hooks';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { subscribeToEvent, sendEvent } from 'utils/socket';
@@ -53,6 +55,8 @@ const World = ({ id, stage, settings, ...rest }) => {
     });
     renderer.current.setSize(innerWidth, innerHeight);
     renderer.current.setPixelRatio(2);
+    renderer.current.physicallyCorrectLights = true;
+    renderer.current.toneMappingExposure = 1;
     renderer.current.outputEncoding = sRGBEncoding;
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
@@ -64,6 +68,11 @@ const World = ({ id, stage, settings, ...rest }) => {
 
     scene.current = new Scene();
     scene.current.fog = new Fog(0x000000, 1, 30);
+
+    getEnvironmentMap(renderer.current).then(({ envMap }) => {
+      scene.current.environment = envMap;
+      // scene.current.background = envMap;
+    });
 
     map.current = new Stage(stage);
     scene.current.add(map.current.mesh);
@@ -111,18 +120,11 @@ const World = ({ id, stage, settings, ...rest }) => {
   }, [stage]);
 
   useEffect(() => {
-    const spotLight = new DirectionalLight(0xFFFFFF);
-    const ambientLight = new HemisphereLight(0x000000, 0xFFFFFF);
+    const hemisphereLight = new HemisphereLight();
+    const ambientLight  = new AmbientLight(0xFFFFFF, 0.3);
+    const directionalLight  = new DirectionalLight(0xFFFFFF, 0.3);
 
-    spotLight.position.set(0, 200, 0);
-    spotLight.castShadow = true;
-    spotLight.shadow.camera.top = 200;
-    spotLight.shadow.camera.bottom = -200;
-    spotLight.shadow.camera.right = 200;
-    spotLight.shadow.camera.left = -200;
-    spotLight.shadow.mapSize.set(4096, 4096);
-
-    lights.current = [spotLight, ambientLight];
+    lights.current = [hemisphereLight, ambientLight, directionalLight];
     lights.current.forEach(light => scene.current.add(light));
 
     return () => {

@@ -36,7 +36,7 @@ class Stage {
         node.position.y -= 1;
         this.navMesh = node;
       } else if (node.isMesh) {
-        node.material.metalness = 0;
+        node.material.depthWrite = !node.material.transparent;
       }
     });
 
