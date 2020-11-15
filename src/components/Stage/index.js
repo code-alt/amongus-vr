@@ -6,6 +6,7 @@ import stages from './stages';
 class Stage {
   constructor(name) {
     this.mesh = new Object3D();
+    this.tasks = [];
 
     this.init(name);
   }
@@ -31,11 +32,15 @@ class Stage {
     const model = await modelLoader.loadAsync(stages[name]);
 
     model.scene.traverse(node => {
+      if (!node.isMesh) return;
+
       if (node.name === 'nav-mesh') {
         node.visible = false;
         node.position.y -= 1;
         this.navMesh = node;
-      } else if (node.isMesh) {
+      } else {
+        if (node.name.includes('task')) this.tasks.push(node);
+
         node.material.depthWrite = !node.material.transparent;
       }
     });

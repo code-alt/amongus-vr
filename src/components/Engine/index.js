@@ -77,7 +77,7 @@ const Engine = ({ id, stage, settings, ...rest }) => {
       // scene.current.background = envMap;
     });
 
-    map.current = new Stage(stage, tasks.current);
+    map.current = new Stage(stage);
     scene.current.add(map.current.mesh);
 
     const renderScene = new RenderPass(scene.current, camera.current);
@@ -87,10 +87,18 @@ const Engine = ({ id, stage, settings, ...rest }) => {
     bloomPass.strength = 0.25;
     bloomPass.radius = 0;
 
+    const outlinePass = new OutlinePass(new Vector2(innerWidth, innerHeight), scene.current, camera.current);
+    outlinePass.renderToScreen = true;
+    outlinePass.selectedObjects = map.current.tasks;
+
+    outlinePass.edgeStrength = 8;
+    outlinePass.visibleEdgeColor.set(0xFDF823);
+    outlinePass.hiddenEdgeColor.set('rgba(0, 0, 0, 0)');
 
     composer.current = new EffectComposer(renderer.current);
     composer.current.addPass(renderScene);
     composer.current.addPass(bloomPass);
+    composer.current.addPass(outlinePass);
 
     player.current = new Object3D();
     player.current.name = 'player';
