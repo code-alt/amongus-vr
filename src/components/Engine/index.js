@@ -19,21 +19,19 @@ import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerM
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import Controls from 'components/Controls';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+import { VRControls, FPSControls } from 'components/Controls';
 import Stage from 'components/Stage';
 import Player from 'components/Player';
-import Hud from 'components/Hud';
 import innerHeight from 'ios-inner-height';
 import getEnvironmentMap from './getEnvironmentMap';
 import { useAppContext } from 'hooks';
 import { cleanScene, removeLights, cleanRenderer } from 'utils/three';
 import { subscribeToEvent, sendEvent } from 'utils/socket';
-import isVR from 'utils/isVR';
-import start from 'assets/game/start.png';
-import customize from 'assets/game/customize.png';
+import vr from 'utils/vr';
 import './index.css';
 
-const World = ({ id, stage, settings, ...rest }) => {
+const Engine = ({ id, stage, settings, ...rest }) => {
   const { username } = useAppContext();
   const playerSpeed = useRef(settings.playerSpeed || 1);
   const players = useRef({});
@@ -66,7 +64,7 @@ const World = ({ id, stage, settings, ...rest }) => {
     renderer.current.shadowMap.enabled = true;
     renderer.current.xr.enabled = true;
     renderer.current.xr.setFramebufferScaleFactor(2.0);
-    if (isVR) document.body.appendChild(VRButton.createButton(renderer.current));
+    if (vr) document.body.appendChild(VRButton.createButton(renderer.current));
 
     camera.current = new PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 500);
     camera.current.position.set(0, 1.6, 0);
@@ -79,19 +77,20 @@ const World = ({ id, stage, settings, ...rest }) => {
       // scene.current.background = envMap;
     });
 
+    map.current = new Stage(stage, tasks.current);
+    scene.current.add(map.current.mesh);
+
     const renderScene = new RenderPass(scene.current, camera.current);
 
-		const bloomPass = new UnrealBloomPass(new Vector2(innerWidth, innerHeight), 1.5, 0.4, 0.85 );
-		bloomPass.threshold = 0.25;
-		bloomPass.strength = 0.25;
-		bloomPass.radius = 0;
+    const bloomPass = new UnrealBloomPass(new Vector2(innerWidth, innerHeight));
+    bloomPass.threshold = 0.25;
+    bloomPass.strength = 0.25;
+    bloomPass.radius = 0;
 
-		composer.current = new EffectComposer(renderer.current);
-		composer.current.addPass(renderScene);
-		composer.current.addPass(bloomPass);
 
-    map.current = new Stage(stage);
-    scene.current.add(map.current.mesh);
+    composer.current = new EffectComposer(renderer.current);
+    composer.current.addPass(renderScene);
+    composer.current.addPass(bloomPass);
 
     player.current = new Object3D();
     player.current.name = 'player';
@@ -99,31 +98,7 @@ const World = ({ id, stage, settings, ...rest }) => {
     scene.current.add(player.current);
     player.current.add(camera.current);
 
-    if (isVR) {
-      const controllers = new Group();
-
-      const controller1 = renderer.current.xr.getController(0);
-      controller1.name = 'left';
-      controllers.add(controller1);
-
-      const controller2 = renderer.current.xr.getController(1);
-      controller2.name = 'right';
-      controllers.add(controller2);
-
-      const controllerModelFactory = new XRControllerModelFactory();
-
-      const controllerGrip1 = renderer.current.xr.getControllerGrip(0);
-      controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-      controllers.add(controllerGrip1);
-
-      const controllerGrip2 = renderer.current.xr.getControllerGrip(1);
-      controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
-      controllers.add(controllerGrip2);
-
-      player.current.add(controllers);
-    }
-
-    controls.current = new Controls(
+    controls.current = new FPSControls(
       player.current,
       camera.current,
       renderer.current,
@@ -199,7 +174,7 @@ const World = ({ id, stage, settings, ...rest }) => {
         player.current.position.set(position.x, position.y, position.z);
         player.current.rotation.y = rotation.y;
 
-        return;
+        return player;
       };
 
       const playerEntry = players.current[data.username];
@@ -217,77 +192,60 @@ const World = ({ id, stage, settings, ...rest }) => {
   }, [id, username]);
 
   useEffect(() => {
-    let hudElements;
+    let presenting = false;
 
-    if (player.current) {
-      player.current.speed = settings.playerSpeed;
-      controls.current = new Controls(
-        player.current,
-        camera.current,
-        renderer.current,
-      );
-    }
+    const handleSessionChange = () => {
+      if (presenting) {
+        const controllers = new Group();
+        controllers.name = 'controllers';
 
-    if (stage === 'lobby' && isVR) {
-      const settingsHud = new Hud({
-        name: 'settings',
-        text: [
-          `Map: ${settings.map}`,
-          `Impostors: ${settings.impostors}`,
-          `Confirm Ejects: ${settings.confirmEjects ? 'on' : 'off'}`,
-          `Emergency Meetings: ${settings.emergencyMeetings}`,
-          `Emergency Cooldown: ${settings.emergencyCooldown}s`,
-          `Discussion Time: ${settings.discussionTime}s`,
-          `Voting Time: ${settings.votingtime}s`,
-          `Player Speed: ${settings.playerSpeed}x`,
-          `Crewmate Vision: ${settings.crewmateVision}x`,
-          `Impostor Vision: ${settings.impostorVision}x`,
-          `Kill Cooldown: ${settings.killCooldown}s`,
-          `Kill Distance: ${settings.killDistance}`,
-          `Visual Tasks: ${settings.visualTasks ? 'on' : 'off'}`,
-          `Common Tasks: ${settings.commonTasks}`,
-          `Long Tasks: ${settings.longTasks}`,
-          `Short Tasks: ${settings.shortTasks}`,
-        ].join('\n'),
-        fontSize: 32,
-        width: 650,
-        height: 650,
-      });
-      settingsHud.mesh.scale.set(2, 2, 2);
-      settingsHud.mesh.position.set(-1, 1, -5);
-      settingsHud.mesh.renderOrder = 9999;
+        const controller1 = renderer.current.xr.getController(0);
+        controller1.name = 'left';
+        controllers.add(controller1);
 
-      const startHud = new Hud({
-        name: 'start',
-        image: start,
-        width: 200,
-        height: 200,
-      });
-      startHud.mesh.position.set(0, -1.5, -5);
-      startHud.mesh.renderOrder = 9999;
+        const controller2 = renderer.current.xr.getController(1);
+        controller2.name = 'right';
+        controllers.add(controller2);
 
-      const customizeHud = new Hud({
-        name: 'customize',
-        image: customize,
-        width: 200,
-        height: 200,
-      });
-      customizeHud.mesh.position.set(2, -1.5, -5);
-      customizeHud.mesh.renderOrder = 9999;
+        const controllerModelFactory = new XRControllerModelFactory();
 
-      hudElements = [settingsHud.mesh, startHud.mesh, customizeHud.mesh];
-      hudElements.forEach(element => camera.current.add(element));
-    }
+        const controllerGrip1 = renderer.current.xr.getControllerGrip(0);
+        controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+        controllers.add(controllerGrip1);
 
-    return () => {
-      if (stage === 'lobby' && isVR) {
-        hudElements?.forEach(element => camera.current.remove(element));
+        const controllerGrip2 = renderer.current.xr.getControllerGrip(1);
+        controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
+        controllers.add(controllerGrip2);
+
+        player.current.add(controllers);
+
+        controls.current = new VRControls(
+          player.current,
+          camera.current,
+          renderer.current,
+        );
+      } else {
+        const controllers = player.current.getObjectByName('controllers');
+        if (controllers) player.current.remove(controllers);
+
+        controls.current = new FPSControls(
+          player.current,
+          camera.current,
+          renderer.current,
+        );
       }
     };
-  }, [id, settings, stage]);
 
-  useEffect(() => {
     const animate = () => {
+      // Handle VR session change
+      if (!presenting && renderer.current.xr.isPresenting) {
+        presenting = true;
+        handleSessionChange();
+      } else if (presenting !== false && !renderer.current.xr.isPresenting) {
+        presenting = false;
+        handleSessionChange();
+      }
+
       oldPosition.current.copy(player.current.position);
       oldRotation.current.copy(player.current.rotation);
 
@@ -308,7 +266,7 @@ const World = ({ id, stage, settings, ...rest }) => {
         };
       }
 
-      if (player.current && false) {
+      if (player.current) {
         const posXChange = oldPosition.current.x.toFixed(3) !== player.current.position.x.toFixed(3);
         const posZChange = oldPosition.current.z.toFixed(3) !== player.current.position.z.toFixed(3);
         const rotYChange = oldRotation.current.y.toFixed(2) !== player.current.rotation.y.toFixed(2);
@@ -344,11 +302,11 @@ const World = ({ id, stage, settings, ...rest }) => {
   return (
     <canvas
       aria-hidden
-      className="world"
+      className="engine"
       ref={canvasRef}
       {...rest}
     />
   );
 };
 
-export default World;
+export default Engine;
